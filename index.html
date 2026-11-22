@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="精度ノート">
+<meta name="theme-color" content="#1f5f3a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>ゴルフ精度ノート</title>
+<style>
+:root{
+  color-scheme: light;
+  --bg:#f4f4f1; --card:#fcfcfb; --line:#e2e1dc; --text:#0b0b0b; --sub:#52514e; --muted:#8a8984;
+  --brand:#1f5f3a; --brand-soft:#e3efe7; --danger:#c03535;
+  --c-left:#2a78d6; --c-right:#eb6834; --c-short:#1baf7a; --c-long:#eda100; --c-in:#52514e;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    color-scheme: dark;
+    --bg:#111110; --card:#1a1a19; --line:#2e2e2c; --text:#f0efec; --sub:#c3c2b7; --muted:#8f8e88;
+    --brand:#4fae76; --brand-soft:#1f3328; --danger:#e66767;
+    --c-left:#3987e5; --c-right:#d95926; --c-short:#199e70; --c-long:#c98500; --c-in:#c3c2b7;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;font-size:15px;line-height:1.45}
+header{position:sticky;top:0;z-index:5;background:var(--brand);color:#fff;
+  padding:calc(env(safe-area-inset-top) + 10px) 16px 10px;font-weight:700;font-size:17px;display:flex;justify-content:space-between;align-items:center}
+header small{font-weight:400;opacity:.85;font-size:12px}
+main{padding:12px 12px calc(84px + env(safe-area-inset-bottom));max-width:640px;margin:0 auto}
+.view{display:none}.view.active{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.card h2{font-size:15px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
+.card h2 .aside{font-size:12px;font-weight:400;color:var(--sub)}
+label.f{display:block;font-size:12px;color:var(--sub);margin-bottom:4px}
+input,select,textarea{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 10px;width:100%}
+textarea{resize:vertical;min-height:44px}
+.row{display:flex;gap:10px}.row>*{flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:999px;padding:7px 12px;font-size:14px;font-weight:600;cursor:pointer}
+.chip.on{background:var(--brand);border-color:var(--brand);color:#fff}
+button{font:inherit;cursor:pointer}
+.btn{border:none;border-radius:12px;padding:12px 14px;font-weight:700;background:var(--brand);color:#fff;width:100%}
+.btn.sub{background:var(--bg);color:var(--text);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--danger);border:1px solid var(--danger)}
+.btn.small{width:auto;padding:7px 12px;font-size:13px;border-radius:9px}
+.btn:disabled{opacity:.4}
+.seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;border:none;background:transparent;color:var(--sub);padding:7px 4px;border-radius:8px;font-size:13px;font-weight:600}
+.seg button.on{background:var(--card);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+/* stepper entry */
+.totalrow{display:flex;align-items:center;gap:8px}
+.totalrow .lbl{font-weight:700;min-width:52px}
+.step{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;background:var(--bg);overflow:hidden}
+.step button{border:none;background:transparent;color:var(--text);width:40px;height:44px;font-size:22px;font-weight:600;touch-action:manipulation}
+.step button:active{background:var(--line)}
+.step input{border:none;background:transparent;width:48px;text-align:center;font-size:20px;font-weight:700;padding:0;border-radius:0;font-variant-numeric:tabular-nums}
+.quick{display:flex;gap:6px;margin:8px 0 4px}
+.quick button{flex:1;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:9px;padding:7px 0;font-size:13px;font-weight:600}
+.cross{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:12px;align-items:center;justify-items:center}
+.dirbox{display:flex;flex-direction:column;align-items:center;gap:4px}
+.dirbox .dl{font-size:13px;font-weight:700;display:flex;align-items:center;gap:5px}
+.dirbox .dl i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.dirbox .step button{width:30px}.dirbox .step input{width:34px}
+.center{background:var(--brand-soft);border:2px solid var(--brand);border-radius:14px;padding:8px 4px;text-align:center;width:100%}
+.center b{display:block;font-size:26px;line-height:1.1;font-variant-numeric:tabular-nums}
+.center span{font-size:11px;color:var(--sub)}
+.numgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.numgrid input{text-align:center;padding:9px 2px}
+.numgrid label{text-align:center}
+.summary{display:flex;justify-content:space-around;text-align:center;padding:8px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:8px 0 10px}
+.summary b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.summary span{font-size:12px;color:var(--sub)}
+.tol{font-size:13px;color:var(--sub)}
+.tolrow{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--sub);margin-top:8px}
+.tolrow input{width:64px;padding:6px;text-align:center}
+.warn{color:var(--danger);font-size:13px;margin-top:6px}
+/* lists */
+.rec{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.rec:first-of-type{border-top:none}
+.rec .club{font-weight:700;min-width:46px}
+.rec .meta{flex:1;font-size:13px;color:var(--sub)}
+.rec .rate{font-weight:700;font-variant-numeric:tabular-nums;font-size:17px}
+.dot{display:inline-block;width:8px;height:8px;border-radius:2px;margin:0 3px 0 6px;vertical-align:middle}
+.dot:first-child{margin-left:0}
+.date-h{font-size:13px;font-weight:700;color:var(--sub);margin:14px 4px 6px}
+.empty{color:var(--muted);text-align:center;padding:24px 8px;font-size:14px}
+/* stacked bar */
+.sbar{display:flex;height:12px;border-radius:4px;overflow:hidden;gap:2px;background:transparent}
+.sbar i{display:block;height:100%}
+.sbar i:first-child{border-radius:4px 0 0 4px}.sbar i:last-child{border-radius:0 4px 4px 0}
+.ctable{width:100%;border-collapse:collapse;font-size:13px}
+.ctable th{color:var(--sub);font-weight:600;text-align:left;padding:6px 4px;border-bottom:1px solid var(--line)}
+.ctable td{padding:9px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+.ctable tr.click{cursor:pointer}
+.ctable .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--sub);margin-top:8px}
+.legend span{display:flex;align-items:center;gap:4px}
+.legend i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.insight{background:var(--brand-soft);border-radius:10px;padding:10px 12px;font-size:14px;margin-top:10px}
+.insight li{margin:2px 0}
+.insight ul{margin:0;padding-left:18px}
+svg text{font-family:inherit}
+.tip{position:fixed;pointer-events:none;background:var(--text);color:var(--card);font-size:12px;padding:6px 8px;border-radius:8px;z-index:50;display:none;white-space:nowrap}
+/* tabbar */
+nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:10}
+nav button{flex:1;border:none;background:none;padding:8px 0 9px;color:var(--muted);font-size:11px;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button svg{width:24px;height:24px}
+nav button.on{color:var(--brand)}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center;z-index:30}
+.modal.show{display:flex}
+.modal.dlg{z-index:40;align-items:center;padding:16px}.modal.dlg .sheet{border-radius:16px}
+.btn.btn-del{background:var(--danger);color:#fff}
+.sheet{background:var(--card);width:100%;max-width:640px;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto}
+.sheet h3{margin:0 0 12px;font-size:16px}
+.mt{margin-top:10px}.mt2{margin-top:16px}
+.toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--card);padding:9px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:60;white-space:nowrap}
+.toast.show{opacity:1}
+.clubedit{display:grid;grid-template-columns:1.1fr 1fr 48px auto;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+.clubedit input{padding:7px 6px}
+.clubedit .ops{display:flex;gap:4px}
+.clubedit .ops button{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:8px;width:28px;height:32px;font-size:14px}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+</style>
+</head>
+<body>
+<header><span>⛳ ゴルフ精度ノート</span><small id="hdrInfo"></small></header>
+
+<main>
+<!-- ===== 記録 ===== -->
+<section class="view active" id="v-record">
+  <div class="card">
+    <label class="f">日付</label><input type="date" id="recDate">
+    <label class="f mt">クラブ</label>
+    <div class="chips" id="clubChips"></div>
+    <div class="tolrow">許容範囲　距離<input id="dist" placeholder="90〜100" style="width:96px">y　左右±<input type="number" id="tolLR" inputmode="numeric" min="0" placeholder="-">y</div>
+  </div>
+
+  <div class="card">
+    <div class="totalrow"><span class="lbl">全打数</span>
+      <div class="step"><button data-t="nTotal" data-d="-1">−</button><input type="number" inputmode="numeric" min="0" id="nTotal" value="0"><button data-t="nTotal" data-d="1">＋</button></div>
+    </div>
+    <div class="quick" id="quickBtns"></div>
+    <label class="f mt">範囲外（外れた方向ごと）</label>
+    <div class="cross">
+      <div></div>
+      <div class="dirbox"><span class="dl"><i style="background:var(--c-long)"></i>奥</span><div class="step"><button data-t="nLong" data-d="-1">−</button><input type="number" inputmode="numeric" min="0" id="nLong" value="0"><button data-t="nLong" data-d="1">＋</button></div></div>
+      <div></div>
+      <div class="dirbox"><span class="dl"><i style="background:var(--c-left)"></i>左</span><div class="step"><button data-t="nLeft" data-d="-1">−</button><input type="number" inputmode="numeric" min="0" id="nLeft" value="0"><button data-t="nLeft" data-d="1">＋</button></div></div>
+      <div class="center"><span>範囲内</span><b id="cIn">0</b><span id="cInRate">–</span></div>
+      <div class="dirbox"><span class="dl"><i style="background:var(--c-right)"></i>右</span><div class="step"><button data-t="nRight" data-d="-1">−</button><input type="number" inputmode="numeric" min="0" id="nRight" value="0"><button data-t="nRight" data-d="1">＋</button></div></div>
+      <div></div>
+      <div class="dirbox"><span class="dl"><i style="background:var(--c-short)"></i>ショート</span><div class="step"><button data-t="nShort" data-d="-1">−</button><input type="number" inputmode="numeric" min="0" id="nShort" value="0"><button data-t="nShort" data-d="1">＋</button></div></div>
+      <div></div>
+    </div>
+    <div class="hint">範囲内 ＝ 全打数 − 範囲外の合計 で自動計算します。斜めに外れた球は、より大きく外れた方向で数えてください。</div>
+    <button class="btn sub small mt" id="resetBtn">入力をクリア</button>
+    <div class="summary">
+      <div><b id="sTotal">0</b><span>全打数</span></div>
+      <div><b id="sOut">0</b><span>範囲外</span></div>
+      <div><b id="sRate">–</b><span>範囲内率</span></div>
+    </div>
+    <div class="warn" id="recWarn"></div>
+    <textarea id="recMemo" placeholder="メモ（任意）例：目標130y、ボール位置を左に"></textarea>
+    <button class="btn mt" id="saveBtn">この内容で保存</button>
+  </div>
+
+  <div class="card">
+    <h2>この日の記録 <span class="aside" id="dayTotal"></span></h2>
+    <div id="dayList"></div>
+  </div>
+</section>
+
+<!-- ===== 履歴 ===== -->
+<section class="view" id="v-history">
+  <div class="card">
+    <label class="f">クラブで絞り込み</label>
+    <select id="histClub"></select>
+  </div>
+  <div id="histList"></div>
+</section>
+
+<!-- ===== 分析 ===== -->
+<section class="view" id="v-analysis">
+  <div class="card">
+    <label class="f">期間</label>
+    <div class="seg" id="periodSeg">
+      <button data-p="30">30日</button><button data-p="90" class="on">90日</button><button data-p="365">1年</button><button data-p="all">全期間</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>クラブ別 範囲内率 <span class="aside">タップで詳細</span></h2>
+    <div id="clubTable"></div>
+    <div class="legend" id="legend1"></div>
+  </div>
+  <div class="card" id="detailCard" style="display:none">
+    <h2><span id="dTitle"></span><select id="dClub" style="width:auto;padding:5px 8px;font-size:13px"></select></h2>
+    <div id="dMap"></div>
+    <div class="insight" id="dInsight"></div>
+    <h2 class="mt2">日別の推移 <span class="aside">範囲内率と外れ方</span></h2>
+    <div id="dTrend"></div>
+    <div class="legend" id="legend2"></div>
+  </div>
+  <div class="card" id="overallCard"></div>
+</section>
+
+<!-- ===== 設定 ===== -->
+<section class="view" id="v-settings">
+  <div class="card">
+    <h2>クラブと許容範囲 <span class="aside">距離(y) / 左右±y</span></h2>
+    <div id="clubEdit"></div>
+    <button class="btn sub mt" id="addClubBtn">＋ クラブを追加</button>
+    <div class="hint">ここで設定した許容範囲が記録時の初期値になります（記録ごとに変更も可）。</div>
+  </div>
+  <div class="card">
+    <h2>打数のまとめ登録 <span class="aside">最大4つ・空欄は非表示</span></h2>
+    <div class="numgrid" style="grid-template-columns:repeat(4,1fr)" id="quickEdit">
+      <div><label class="f">ボタン1</label><input type="number" inputmode="numeric" min="1" max="999" data-q="0"></div>
+      <div><label class="f">ボタン2</label><input type="number" inputmode="numeric" min="1" max="999" data-q="1"></div>
+      <div><label class="f">ボタン3</label><input type="number" inputmode="numeric" min="1" max="999" data-q="2"></div>
+      <div><label class="f">ボタン4</label><input type="number" inputmode="numeric" min="1" max="999" data-q="3"></div>
+    </div>
+    <div class="hint">記録画面の「全打数」に、ここで設定した球数をボタン1回で加算できます（例：5、10、20、50）。</div>
+  </div>
+  <div class="card">
+    <h2>バックアップ</h2>
+    <div class="row"><button class="btn sub" id="exportBtn">JSONで保存</button><button class="btn sub" id="importBtn">JSONを読込</button></div>
+    <button class="btn sub mt" id="csvBtn">CSVで書き出し（Excel用）</button>
+    <input type="file" id="importFile" accept="application/json,.json" style="display:none">
+    <div class="hint">データはこの端末のブラウザ内だけに保存されます。定期的にJSONで保存しておくと安心です。</div>
+  </div>
+  <div class="card">
+    <button class="btn danger" id="wipeBtn">すべてのデータを削除</button>
+  </div>
+</section>
+</main>
+
+<nav id="tabs">
+  <button data-v="record" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".8" fill="currentColor"/></svg>記録</button>
+  <button data-v="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>履歴</button>
+  <button data-v="analysis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>分析</button>
+  <button data-v="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>設定</button>
+</nav>
+
+<!-- edit modal -->
+<div class="modal" id="editModal"><div class="sheet">
+  <h3>記録を編集</h3>
+  <div class="row"><div><label class="f">日付</label><input type="date" id="eDate"></div>
+  <div><label class="f">クラブ</label><select id="eClub"></select></div></div>
+  <div class="numgrid mt">
+    <div><label class="f">全打数</label><input type="number" inputmode="numeric" min="0" id="eTotal"></div>
+    <div><label class="f">左</label><input type="number" inputmode="numeric" min="0" id="eLeft"></div>
+    <div><label class="f">右</label><input type="number" inputmode="numeric" min="0" id="eRight"></div>
+    <div><label class="f">ショート</label><input type="number" inputmode="numeric" min="0" id="eShort"></div>
+    <div><label class="f">奥</label><input type="number" inputmode="numeric" min="0" id="eLong"></div>
+  </div>
+  <div class="tolrow">許容 距離<input id="eDist" style="width:96px">y　左右±<input type="number" id="eTolLR" inputmode="numeric">y</div>
+  <label class="f mt">メモ</label><textarea id="eMemo"></textarea>
+  <div class="warn" id="eWarn"></div>
+  <button class="btn mt" id="eSave">保存</button>
+  <div class="row mt"><button class="btn danger" id="eDelete">削除</button><button class="btn sub" id="eCancel">閉じる</button></div>
+</div></div>
+
+<div class="modal dlg" id="dlg"><div class="sheet">
+  <p id="dlgMsg" style="margin:0 0 12px;white-space:pre-wrap"></p>
+  <input id="dlgInput" style="display:none" maxlength="10">
+  <div class="row mt"><button class="btn sub" id="dlgNo">キャンセル</button><button class="btn" id="dlgYes">OK</button></div>
+</div></div>
+<div class="tip" id="tip"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const KEY='golfAccuracy.v1', DRAFT='golfAccuracy.draft';
+const DIRS=[{k:'left',n:'左',c:'--c-left'},{k:'right',n:'右',c:'--c-right'},{k:'short',n:'ショート',c:'--c-short'},{k:'long',n:'奥',c:'--c-long'}];
+const DEFAULT_CLUBS=[['58','90〜100'],['58ハーフ','70'],['54','100〜110'],['54ハーフ','90'],['AW','120〜130'],['PW','130〜140'],['9I','140〜150'],['8I','150〜160'],['7I','160〜170'],['6I','170〜180'],['5I','180〜190'],['UT20','180〜200'],['1W','']];
+const newClubs=()=>DEFAULT_CLUBS.map(([name,dist])=>({id:uid(),name,dist,tolLR:''}));
+const $=id=>document.getElementById(id);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const todayStr=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10)};
+const pct=(a,b)=>b?Math.round(a/b*1000)/10:0;
+const fmtDate=s=>{const d=new Date(s+'T00:00');return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）`};
+const shortDate=s=>{const [,m,d]=s.split('-');return `${+m}/${+d}`};
+
+/* ---------- storage ---------- */
+let db;
+function load(){
+  try{db=JSON.parse(localStorage.getItem(KEY))}catch(e){db=null}
+  if(!db||!Array.isArray(db.clubs)){db={version:2,clubs:newClubs(),records:[]};save();return}
+  if(db.version!==2){ // 旧版からの移行
+    if(!db.records.length)db.clubs=newClubs();
+    else{
+      const used=new Set(db.records.map(r=>r.clubId));
+      const old=db.clubs.filter(c=>used.has(c.id));
+      db.clubs=newClubs().map(n=>{const o=old.find(c=>c.name===n.name);return o?{...n,id:o.id}:n});
+      old.filter(o=>!db.clubs.some(c=>c.id===o.id)).forEach(o=>db.clubs.push({id:o.id,name:o.name,dist:'',tolLR:''}));
+    }
+    db.records.forEach(r=>{if(r.dist===undefined)r.dist=r.tolFB?`±${r.tolFB}`:'';delete r.tolFB});
+    db.version=2;save();
+  }
+}
+function save(){localStorage.setItem(KEY,JSON.stringify(db))}
+const clubById=id=>db.clubs.find(c=>c.id===id);
+const clubName=r=>clubById(r.clubId)?.name||r.clubName||'?';
+const tolText=o=>[o.dist?`${o.dist}y`:'',o.tolLR!==''&&o.tolLR!=null?`左右±${o.tolLR}y`:''].filter(Boolean).join('・');
+const inOf=r=>Math.max(0,r.total-r.left-r.right-r.short-r.long);
+
+function ask(msg,{input=false,ok='OK',danger=false,cancel=true,value=''}={}){
+  return new Promise(res=>{
+    $('dlgMsg').textContent=msg;const inp=$('dlgInput');inp.style.display=input?'':'none';inp.value=value;
+    $('dlgYes').textContent=ok;$('dlgYes').className='btn'+(danger?' btn-del':'');$('dlgNo').style.display=cancel?'':'none';
+    const m=$('dlg');m.classList.add('show');if(input)setTimeout(()=>inp.focus(),50);
+    const done=v=>{m.classList.remove('show');$('dlgYes').onclick=$('dlgNo').onclick=inp.onkeydown=null;res(v)};
+    $('dlgYes').onclick=()=>done(input?inp.value:true);$('dlgNo').onclick=()=>done(input?null:false);
+    inp.onkeydown=e=>{if(e.key==='Enter')done(inp.value)};
+  });
+}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),1600)}
+
+/* ---------- tabs ---------- */
+$('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id==='v-'+b.dataset.v));
+  window.scrollTo(0,0);
+  ({record:renderRecord,history:renderHistory,analysis:renderAnalysis,settings:renderSettings})[b.dataset.v]();
+});
+
+/* ---------- record ---------- */
+let st={clubId:null};
+const NUMS=['nTotal','nLeft','nRight','nShort','nLong'];
+function saveDraft(){localStorage.setItem(DRAFT,JSON.stringify({clubId:st.clubId,dist:$('dist').value,tolLR:$('tolLR').value,memo:$('recMemo').value,num:NUMS.map(i=>$(i).value)}))}
+function loadDraft(){try{const d=JSON.parse(localStorage.getItem(DRAFT));if(d&&Array.isArray(d.num)){st.clubId=d.clubId;return d}}catch(e){}return null}
+function setTol(c){$('dist').value=c?.dist??'';$('tolLR').value=c?.tolLR??''}
+
+function renderChips(){
+  if(!clubById(st.clubId))st.clubId=db.clubs[0]?.id||null;
+  $('clubChips').innerHTML=db.clubs.map(c=>`<button class="chip ${c.id===st.clubId?'on':''}" data-id="${c.id}">${esc(c.name)}</button>`).join('')||'<span class="hint">設定でクラブを追加してください</span>';
+}
+$('clubChips').addEventListener('click',e=>{
+  const b=e.target.closest('.chip');if(!b)return;
+  st.clubId=b.dataset.id;setTol(clubById(st.clubId));
+  renderChips();saveDraft();
+});
+document.getElementById('v-record').addEventListener('click',e=>{
+  const b=e.target.closest('button[data-t],button[data-add]');if(!b)return;
+  if(b.dataset.add){$('nTotal').value=nv('nTotal')+Number(b.dataset.add)}
+  else{$(b.dataset.t).value=Math.max(0,nv(b.dataset.t)+Number(b.dataset.d))}
+  updateSummary();saveDraft();
+});
+const cap=s=>s[0].toUpperCase()+s.slice(1);
+$('resetBtn').onclick=async()=>{if(currentCounts().total&&!await ask('入力をクリアしますか？'))return;resetInput()};
+function resetInput(){NUMS.forEach(i=>$(i).value=0);$('recMemo').value='';updateSummary();saveDraft()}
+NUMS.forEach(i=>{$(i).addEventListener('input',()=>{updateSummary();saveDraft()});$(i).addEventListener('focus',e=>e.target.select())});
+['dist','tolLR','recMemo'].forEach(i=>$(i).addEventListener('input',saveDraft));
+const nv=id=>Math.max(0,parseInt($(id).value,10)||0);
+function currentCounts(){return{total:nv('nTotal'),left:nv('nLeft'),right:nv('nRight'),short:nv('nShort'),long:nv('nLong')}}
+function updateSummary(){
+  const t=currentCounts(),miss=t.left+t.right+t.short+t.long,inn=t.total-miss,bad=inn<0;
+  $('sTotal').textContent=t.total;$('sOut').textContent=miss;
+  const rate=t.total&&!bad?pct(inn,t.total)+'%':'–';
+  $('sRate').textContent=rate;$('cIn').textContent=bad?'!':inn;$('cInRate').textContent=rate;
+  $('recWarn').textContent=bad?`範囲外の合計（${miss}）が全打数（${t.total}）を超えています`:'';
+  $('saveBtn').disabled=bad||t.total===0||!st.clubId;
+}
+$('saveBtn').onclick=()=>{
+  const t=currentCounts(),c=clubById(st.clubId);if(!c||!t.total)return;
+  db.records.push({id:uid(),date:$('recDate').value||todayStr(),clubId:c.id,clubName:c.name,...t,
+    dist:$('dist').value.trim(),tolLR:$('tolLR').value===''?'':Number($('tolLR').value),memo:$('recMemo').value.trim(),createdAt:Date.now()});
+  save();resetInput();renderDay();toast(`${c.name}：${t.total}球を保存しました`);
+};
+$('recDate').addEventListener('change',renderDay);
+
+function recRow(r){
+  const inn=inOf(r);
+  return `<div class="rec" data-id="${r.id}">
+    <div class="club">${esc(clubName(r))}</div>
+    <div class="meta">${r.total}球${tolText(r)?`（${esc(tolText(r))}）`:''}<br>${DIRS.map(d=>`<i class="dot" style="background:var(${d.c})"></i>${d.n}${r[d.k]}`).join('')}
+      ${r.memo?`<br><span style="color:var(--muted)">${esc(r.memo)}</span>`:''}</div>
+    <div class="rate">${pct(inn,r.total)}%</div></div>`;
+}
+function renderDay(){
+  const d=$('recDate').value;const list=db.records.filter(r=>r.date===d).sort((a,b)=>a.createdAt-b.createdAt);
+  $('dayList').innerHTML=list.length?list.map(recRow).join(''):'<div class="empty">まだ記録がありません</div>';
+  const tot=list.reduce((s,r)=>s+r.total,0),inn=list.reduce((s,r)=>s+inOf(r),0);
+  $('dayTotal').textContent=list.length?`計${tot}球・範囲内${pct(inn,tot)}%`:'';
+}
+const DEFAULT_QUICK=[10,20,30,50];
+const quickList=()=>(Array.isArray(db.quick)?db.quick:DEFAULT_QUICK).slice(0,4);
+function renderQuick(){
+  const q=quickList().filter(v=>v>0);
+  $('quickBtns').style.display=q.length?'':'none';
+  $('quickBtns').innerHTML=q.map(v=>`<button data-add="${v}">＋${v}</button>`).join('');
+}
+function renderRecord(){renderChips();renderQuick();updateSummary();renderDay()}
+
+/* ---------- edit modal ---------- */
+let editing=null;
+function openEdit(id){
+  const r=db.records.find(x=>x.id===id);if(!r)return;editing=r;
+  $('eDate').value=r.date;
+  $('eClub').innerHTML=db.clubs.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')+(clubById(r.clubId)?'':`<option value="${r.clubId}">${esc(r.clubName)}（削除済）</option>`);
+  $('eClub').value=r.clubId;
+  ['Total','Left','Right','Short','Long'].forEach(k=>$('e'+k).value=r[k.toLowerCase()]);
+  $('eTolLR').value=r.tolLR??'';$('eDist').value=r.dist||'';$('eMemo').value=r.memo||'';$('eWarn').textContent='';
+  $('editModal').classList.add('show');
+}
+document.addEventListener('click',e=>{const r=e.target.closest('.rec[data-id]');if(r)openEdit(r.dataset.id)});
+$('eCancel').onclick=()=>$('editModal').classList.remove('show');
+$('editModal').addEventListener('click',e=>{if(e.target.id==='editModal')$('editModal').classList.remove('show')});
+$('eSave').onclick=()=>{
+  const v={};['Total','Left','Right','Short','Long'].forEach(k=>v[k.toLowerCase()]=nv('e'+k));
+  if(v.left+v.right+v.short+v.long>v.total){$('eWarn').textContent='範囲外の合計が全打数を超えています';return}
+  if(!v.total){$('eWarn').textContent='打数を入力してください';return}
+  const c=clubById($('eClub').value);
+  Object.assign(editing,v,{date:$('eDate').value||editing.date,clubId:$('eClub').value,clubName:c?c.name:editing.clubName,
+    dist:$('eDist').value.trim(),tolLR:$('eTolLR').value===''?'':Number($('eTolLR').value),memo:$('eMemo').value.trim()});
+  save();$('editModal').classList.remove('show');refreshActive();toast('更新しました');
+};
+$('eDelete').onclick=async()=>{if(!await ask(`${fmtDate(editing.date)} ${clubName(editing)}（${editing.total}球）の記録を削除しますか？`,{ok:'削除',danger:true}))return;db.records=db.records.filter(r=>r!==editing);save();$('editModal').classList.remove('show');refreshActive();toast('削除しました')};
+function refreshActive(){const v=document.querySelector('.view.active').id;({'v-record':renderRecord,'v-history':renderHistory,'v-analysis':renderAnalysis,'v-settings':renderSettings})[v]()}
+
+/* ---------- history ---------- */
+$('histClub').addEventListener('change',renderHistory);
+function renderHistory(){
+  const sel=$('histClub'),cur=sel.value;
+  sel.innerHTML='<option value="">すべてのクラブ</option>'+db.clubs.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  sel.value=cur&&clubById(cur)?cur:'';
+  const recs=db.records.filter(r=>!sel.value||r.clubId===sel.value).sort((a,b)=>b.date.localeCompare(a.date)||a.createdAt-b.createdAt);
+  if(!recs.length){$('histList').innerHTML='<div class="card"><div class="empty">記録がありません</div></div>';return}
+  const groups={};recs.forEach(r=>(groups[r.date]=groups[r.date]||[]).push(r));
+  $('histList').innerHTML=Object.keys(groups).sort().reverse().map(d=>{
+    const g=groups[d],tot=g.reduce((s,r)=>s+r.total,0),inn=g.reduce((s,r)=>s+inOf(r),0);
+    return `<div class="date-h">${fmtDate(d)}　計${tot}球・範囲内${pct(inn,tot)}%</div><div class="card" style="padding:4px 14px">${g.map(recRow).join('')}</div>`;
+  }).join('');
+}
+
+/* ---------- analysis ---------- */
+let period='90',detailClub=null;
+$('periodSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;period=b.dataset.p;
+  document.querySelectorAll('#periodSeg button').forEach(x=>x.classList.toggle('on',x===b));renderAnalysis()});
+function periodRecs(){
+  if(period==='all')return db.records.slice();
+  const d=new Date();d.setDate(d.getDate()-Number(period)+1);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
+  const from=d.toISOString().slice(0,10);return db.records.filter(r=>r.date>=from);
+}
+function agg(list){
+  const a={total:0,left:0,right:0,short:0,long:0,n:list.length,days:new Set(list.map(r=>r.date)).size};
+  list.forEach(r=>{a.total+=r.total;DIRS.forEach(d=>a[d.k]+=r[d.k])});
+  a.in=a.total-a.left-a.right-a.short-a.long;a.rate=pct(a.in,a.total);return a;
+}
+function stackBar(a){
+  const parts=[{v:a.in,c:'--c-in',n:'範囲内'},...DIRS.map(d=>({v:a[d.k],c:d.c,n:d.n}))].filter(p=>p.v>0);
+  return `<div class="sbar">${parts.map(p=>`<i data-tip="${p.n} ${p.v}球（${pct(p.v,a.total)}%）" style="flex:${p.v};background:var(${p.c})"></i>`).join('')}</div>`;
+}
+function legendHtml(withIn=true){
+  return (withIn?`<span><i style="background:var(--c-in)"></i>範囲内</span>`:'')+DIRS.map(d=>`<span><i style="background:var(${d.c})"></i>${d.n}</span>`).join('');
+}
+function insights(a){
+  const out=[];if(!a.total)return out;
+  const miss=a.total-a.in;
+  if(!miss){out.push('すべて範囲内です。許容範囲を狭めてもよいかもしれません。');return out}
+  const top=DIRS.slice().sort((x,y)=>a[y.k]-a[x.k])[0];
+  out.push(`いちばん多いミスは<b>${top.n}</b>（全打数の${pct(a[top.k],a.total)}%、ミスの${pct(a[top.k],miss)}%）。`);
+  const lr=a.left+a.right,fb=a.short+a.long;
+  if(lr>=3){
+    const big=a.right>=a.left?'右':'左',bv=Math.max(a.left,a.right),sv=Math.min(a.left,a.right);
+    if(bv>=sv*1.5&&bv-sv>=2) out.push(`左右では<b>${big}に偏り</b>あり（左${a.left}：右${a.right}）。${big==='右'?'つかまりが弱い／フェースが開き気味':'引っかけ／フェースが閉じ気味'}の可能性。`);
+    else out.push(`左右のミスはほぼ均等（左${a.left}：右${a.right}）。方向性より再現性の問題の可能性。`);
+  }
+  if(fb>=3){
+    const big=a.short>=a.long?'ショート':'奥',bv=Math.max(a.short,a.long),sv=Math.min(a.short,a.long);
+    if(bv>=sv*1.5&&bv-sv>=2) out.push(`前後では<b>${big}に偏り</b>あり（ショート${a.short}：奥${a.long}）。${big==='ショート'?'番手選択を見直すか、ミート率（ダフり・トップ）を確認。':'想定より飛んでいるので、番手を下げるか距離感を見直し。'}`);
+    else out.push(`前後のミスはほぼ均等（ショート${a.short}：奥${a.long}）。`);
+  }
+  if(lr&&fb){out.push(lr>fb*1.5?'ミスは<b>方向（左右）</b>が中心です。':fb>lr*1.5?'ミスは<b>距離（前後）</b>が中心です。':'方向と距離のミスが同程度です。')}
+  return out;
+}
+function renderAnalysis(){
+  const recs=periodRecs();
+  const rows=db.clubs.map(c=>({c,a:agg(recs.filter(r=>r.clubId===c.id))})).filter(x=>x.a.total>0);
+  $('legend1').innerHTML=rows.length?legendHtml():'';
+  if(!rows.length){$('clubTable').innerHTML='<div class="empty">この期間の記録がありません</div>';$('detailCard').style.display='none';$('overallCard').style.display='none';return}
+  $('clubTable').innerHTML=`<table class="ctable"><tr><th>クラブ</th><th class="num">打数</th><th style="width:45%">内訳</th><th class="num">範囲内率</th></tr>
+    ${rows.map(x=>`<tr class="click" data-cid="${x.c.id}"><td><b>${esc(x.c.name)}</b></td><td class="num">${x.a.total}</td><td>${stackBar(x.a)}</td><td class="num"><b>${x.a.rate}%</b></td></tr>`).join('')}</table>`;
+  if(!rows.some(x=>x.c.id===detailClub))detailClub=rows[0].c.id;
+  $('dClub').innerHTML=rows.map(x=>`<option value="${x.c.id}">${esc(x.c.name)}</option>`).join('');$('dClub').value=detailClub;
+  renderDetail(recs);
+  // overall
+  const all=agg(recs.filter(r=>rows.some(x=>x.c.id===r.clubId)));
+  const ranked=rows.filter(x=>x.a.total>=10).sort((p,q)=>q.a.rate-p.a.rate);
+  let html=`<h2>全体のまとめ <span class="aside">${all.days}日・${all.total}球</span></h2>${stackBar(all)}<div class="insight"><ul>${insights(all).map(s=>`<li>${s}</li>`).join('')}`;
+  if(ranked.length>=2)html+=`<li>得意：<b>${esc(ranked[0].c.name)}</b>（${ranked[0].a.rate}%）／ 課題：<b>${esc(ranked.at(-1).c.name)}</b>（${ranked.at(-1).a.rate}%）</li>`;
+  html+=`</ul></div><div class="hint">得意・課題は10球以上打ったクラブで比較しています。</div>`;
+  $('overallCard').innerHTML=html;$('overallCard').style.display='';
+}
+$('clubTable').addEventListener('click',e=>{const tr=e.target.closest('tr[data-cid]');if(!tr)return;detailClub=tr.dataset.cid;$('dClub').value=detailClub;renderDetail(periodRecs());$('detailCard').scrollIntoView({behavior:'smooth',block:'start'})});
+$('dClub').addEventListener('change',()=>{detailClub=$('dClub').value;renderDetail(periodRecs())});
+
+function renderDetail(recs){
+  const c=clubById(detailClub);if(!c){$('detailCard').style.display='none';return}
+  const list=recs.filter(r=>r.clubId===c.id),a=agg(list);
+  $('detailCard').style.display='';
+  $('dTitle').textContent=`${a.days}日・${a.total}球`;
+  $('dMap').innerHTML=missMap(a,list);
+  $('dInsight').innerHTML=`<ul>${insights(a).map(s=>`<li>${s}</li>`).join('')}</ul>`;
+  $('dTrend').innerHTML=trendChart(list);
+  $('legend2').innerHTML=list.length?`<span><i style="background:var(--text);height:3px;border-radius:2px"></i>範囲内率</span>`+legendHtml(false):'';
+}
+function missMap(a,list){
+  const W=320,H=240,cx=W/2,cy=H/2,bw=96,bh=72;
+  const tols=[...new Set(list.map(tolText).filter(Boolean))];
+  const box=(x,y,k,label,anchor='middle')=>{
+    const d=DIRS.find(d=>d.k===k),v=a[k],p=pct(v,a.total);
+    return `<g data-tip="${label} ${v}球（${p}%）"><text x="${x}" y="${y}" text-anchor="${anchor}" font-size="22" font-weight="700" fill="${css('--text')}">${p}%</text>
+      <text x="${x}" y="${y+18}" text-anchor="${anchor}" font-size="12" fill="${css('--sub')}"><tspan fill="${css(d.c)}">■</tspan> ${label} ${v}球</text></g>`;
+  };
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="外れ方の分布">
+    <rect x="${cx-bw/2}" y="${cy-bh/2}" width="${bw}" height="${bh}" rx="10" fill="${css('--brand-soft')}" stroke="${css('--brand')}" stroke-width="2"/>
+    <line x1="${cx}" y1="${cy-bh/2-6}" x2="${cx}" y2="${cy+bh/2+6}" stroke="${css('--line')}" stroke-dasharray="3 3"/>
+    <line x1="${cx-bw/2-6}" y1="${cy}" x2="${cx+bw/2+6}" y2="${cy}" stroke="${css('--line')}" stroke-dasharray="3 3"/>
+    <g data-tip="範囲内 ${a.in}球（${a.rate}%）"><text x="${cx}" y="${cy+2}" text-anchor="middle" font-size="24" font-weight="800" fill="${css('--text')}">${a.rate}%</text>
+    <text x="${cx}" y="${cy+20}" text-anchor="middle" font-size="11" fill="${css('--sub')}">範囲内 ${a.in}球</text></g>
+    ${box(cx,24,'long','奥')}
+    ${box(cx,H-34,'short','ショート')}
+    ${box(14,cy-6,'left','左','start')}
+    ${box(W-14,cy-6,'right','右','end')}
+    <text x="${W-4}" y="${H-4}" text-anchor="end" font-size="10" fill="${css('--muted')}">↑ 目標方向</text>
+  </svg><div class="hint" style="text-align:center">許容範囲：${tols.length?esc(tols.join('、')):'-'}</div>`;
+}
+function trendChart(list){
+  const byDate={};list.forEach(r=>(byDate[r.date]=byDate[r.date]||[]).push(r));
+  const dates=Object.keys(byDate).sort();
+  if(dates.length<1)return '<div class="empty">記録がありません</div>';
+  const pts=dates.map(d=>({d,a:agg(byDate[d])}));
+  const W=340,H=210,L=34,R=10,T=12,B=58,pw=W-L-R,ph=H-T-B;
+  const n=pts.length,step=pw/Math.max(n,1),x=i=>L+step*i+step/2,y=v=>T+ph*(1-v/100);
+  const ink=css('--text'),sub=css('--sub'),grid=css('--line'),surf=css('--card');
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="範囲内率の推移">`;
+  [0,25,50,75,100].forEach(v=>{s+=`<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="${grid}" stroke-width="1"/><text x="${L-5}" y="${y(v)+4}" text-anchor="end" font-size="10" fill="${sub}">${v}%</text>`});
+  // miss composition mini stacked bars at bottom
+  const mbH=22,mbY=H-B+22,bw=Math.min(18,step*.55);
+  pts.forEach((p,i)=>{
+    const miss=p.a.total-p.a.in;let yy=mbY+mbH;
+    DIRS.forEach(d=>{if(!p.a[d.k]||!miss)return;const h=mbH*p.a[d.k]/miss;yy-=h;
+      s+=`<rect x="${x(i)-bw/2}" y="${yy+1}" width="${bw}" height="${Math.max(h-2,1)}" rx="2" fill="${css(d.c)}"/>`});
+  });
+  s+=`<text x="${L-5}" y="${mbY+mbH/2+4}" text-anchor="end" font-size="9" fill="${sub}">ミス</text>`;
+  // line
+  if(n>1)s+=`<polyline fill="none" stroke="${ink}" stroke-width="2" stroke-linejoin="round" points="${pts.map((p,i)=>`${x(i)},${y(p.a.rate)}`).join(' ')}"/>`;
+  pts.forEach((p,i)=>{s+=`<circle cx="${x(i)}" cy="${y(p.a.rate)}" r="4.5" fill="${ink}" stroke="${surf}" stroke-width="2"/>`});
+  // labels: first, last, and spaced
+  const every=Math.ceil(n/6);
+  pts.forEach((p,i)=>{if(i%every===0||i===n-1)s+=`<text x="${x(i)}" y="${T+ph+14}" text-anchor="middle" font-size="10" fill="${sub}">${shortDate(p.d)}</text>`});
+  const last=pts[n-1];s+=`<text x="${Math.min(x(n-1),W-R-4)}" y="${Math.max(y(last.a.rate)-9,T+9)}" text-anchor="${n>1?'end':'middle'}" font-size="11" font-weight="700" fill="${ink}">${last.a.rate}%</text>`;
+  // hit areas
+  pts.forEach((p,i)=>{s+=`<rect x="${L+step*i}" y="${T}" width="${step}" height="${H-T}" fill="transparent" data-tip="${shortDate(p.d)}　${p.a.total}球　範囲内${p.a.rate}%｜左${p.a.left} 右${p.a.right} 短${p.a.short} 奥${p.a.long}"/>`});
+  s+='</svg>';
+  if(n>=2){const f=pts[0].a.rate,l=last.a.rate,dlt=Math.round((l-f)*10)/10;
+    s+=`<div class="hint">初回 ${f}% → 直近 ${l}%（${dlt>=0?'+':''}${dlt}pt）</div>`}
+  return s;
+}
+/* tooltip */
+const tip=$('tip');
+function showTip(e){
+  const t=e.target.closest('[data-tip]');if(!t){tip.style.display='none';return}
+  tip.textContent=t.getAttribute('data-tip');tip.style.display='block';
+  const p=e.touches?e.touches[0]:e;let lx=p.clientX+12,ly=p.clientY-36;
+  const w=tip.offsetWidth;if(lx+w>innerWidth-8)lx=innerWidth-w-8;if(ly<8)ly=p.clientY+16;
+  tip.style.left=lx+'px';tip.style.top=ly+'px';
+}
+$('v-analysis').addEventListener('pointermove',showTip);
+$('v-analysis').addEventListener('pointerdown',showTip);
+$('v-analysis').addEventListener('pointerleave',()=>tip.style.display='none');
+document.addEventListener('scroll',()=>tip.style.display='none',{passive:true});
+
+/* ---------- settings ---------- */
+function renderQuickEdit(){const q=quickList();document.querySelectorAll('#quickEdit input').forEach((el,i)=>el.value=q[i]>0?q[i]:'')}
+$('quickEdit').addEventListener('change',()=>{
+  db.quick=[...document.querySelectorAll('#quickEdit input')].map(el=>{const v=Math.floor(Number(el.value));return v>0?Math.min(v,999):0});
+  save();renderQuickEdit();renderQuick();toast('保存しました');
+});
+function renderSettings(){renderQuickEdit();
+  $('clubEdit').innerHTML=db.clubs.map((c,i)=>`<div class="clubedit" data-id="${c.id}">
+    <input value="${esc(c.name)}" data-f="name" maxlength="10">
+    <input value="${esc(c.dist||'')}" data-f="dist" placeholder="距離">
+    <input type="number" inputmode="numeric" value="${c.tolLR??''}" data-f="tolLR" placeholder="±">
+    <div class="ops"><button data-op="up" ${i===0?'disabled':''}>↑</button><button data-op="down" ${i===db.clubs.length-1?'disabled':''}>↓</button><button data-op="del">✕</button></div></div>`).join('');
+}
+$('clubEdit').addEventListener('change',e=>{
+  const row=e.target.closest('.clubedit'),f=e.target.dataset.f;if(!row||!f)return;
+  const c=clubById(row.dataset.id);c[f]=f==='name'?(e.target.value.trim()||c.name):f==='dist'?e.target.value.trim():(e.target.value===''?'':Math.max(0,Number(e.target.value)||0));
+  if(f==='name')db.records.forEach(r=>{if(r.clubId===c.id)r.clubName=c.name});
+  save();toast('保存しました');
+});
+$('clubEdit').addEventListener('click',async e=>{
+  const b=e.target.closest('button[data-op]');if(!b)return;
+  const id=b.closest('.clubedit').dataset.id,i=db.clubs.findIndex(c=>c.id===id);
+  if(b.dataset.op==='del'){
+    const n=db.records.filter(r=>r.clubId===id).length;
+    if(!await ask(n?`このクラブには${n}件の記録があります。クラブを一覧から外しますか？（記録は残ります）`:'このクラブを削除しますか？',{ok:'削除',danger:true}))return;
+    db.clubs.splice(i,1);
+  }else{const j=b.dataset.op==='up'?i-1:i+1;[db.clubs[i],db.clubs[j]]=[db.clubs[j],db.clubs[i]]}
+  save();renderSettings();
+});
+$('addClubBtn').onclick=async()=>{const name=await ask('追加するクラブ名（例：4I、50°）',{input:true,ok:'追加'});if(!name||!name.trim())return;
+  db.clubs.push({id:uid(),name:name.trim().slice(0,10),dist:'',tolLR:''});save();renderSettings()};
+function download(name,text,type){
+  const blob=new Blob([text],{type});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+}
+$('exportBtn').onclick=()=>download(`golf-accuracy-${todayStr()}.json`,JSON.stringify(db,null,1),'application/json');
+$('csvBtn').onclick=()=>{
+  const q=s=>`"${String(s??'').replace(/"/g,'""')}"`;
+  const rows=[['日付','クラブ','打数','範囲内','左','右','ショート','奥','範囲内率(%)','許容距離(y)','許容左右(±y)','メモ']];
+  db.records.slice().sort((a,b)=>a.date.localeCompare(b.date)||a.createdAt-b.createdAt).forEach(r=>rows.push([r.date,clubName(r),r.total,inOf(r),r.left,r.right,r.short,r.long,pct(inOf(r),r.total),r.dist,r.tolLR,r.memo]));
+  download(`golf-accuracy-${todayStr()}.csv`,'﻿'+rows.map(r=>r.map(q).join(',')).join('\r\n'),'text/csv');
+};
+$('importBtn').onclick=()=>$('importFile').click();
+$('importFile').onchange=async e=>{
+  const f=e.target.files[0];e.target.value='';if(!f)return;
+  try{
+    const d=JSON.parse(await f.text());
+    if(!Array.isArray(d.clubs)||!Array.isArray(d.records))throw new Error('形式が違います');
+    if(!await ask(`クラブ${d.clubs.length}本・記録${d.records.length}件を読み込みます。現在のデータは置き換えられます。よろしいですか？`,{ok:'読み込む',danger:true}))return;
+    db=d;save();refreshActive();toast('読み込みました');
+  }catch(err){ask('読み込めませんでした：'+err.message,{cancel:false})}
+};
+$('wipeBtn').onclick=async()=>{if(!await ask('すべての記録とクラブ設定を削除します。元に戻せません。よろしいですか？',{ok:'すべて削除',danger:true}))return;
+  localStorage.removeItem(KEY);localStorage.removeItem(DRAFT);load();st.clubId=null;resetInput();renderSettings();toast('削除しました')};
+
+/* ---------- init ---------- */
+load();
+$('recDate').value=todayStr();
+const d=loadDraft();
+if(!clubById(st.clubId))st.clubId=db.clubs[0]?.id||null;
+if(d){$('dist').value=d.dist??'';$('tolLR').value=d.tolLR??'';$('recMemo').value=d.memo||'';NUMS.forEach((i,j)=>$(i).value=d.num[j]||0)}
+else setTol(clubById(st.clubId));
+renderRecord();
+matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{if($('v-analysis').classList.contains('active'))renderAnalysis()});
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>

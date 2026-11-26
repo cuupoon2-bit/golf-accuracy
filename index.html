@@ -133,10 +133,25 @@ nav button.on{color:var(--brand)}
 .tagstrip::-webkit-scrollbar{display:none}
 .tagwrap{display:flex;flex-wrap:wrap;gap:6px}
 .tag{flex:none;border:1px solid var(--line);background:var(--bg);color:var(--sub);border-radius:999px;padding:0 11px;height:30px;font-size:13px;font-weight:600;white-space:nowrap}
+.tag{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;display:inline-flex;align-items:center;gap:4px}
 .tag.on{background:var(--text);border-color:var(--text);color:var(--card)}
-.tag.del::after{content:" ✕";font-weight:400;opacity:.6}
+.tag .cnt{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:var(--card);color:var(--text);font-size:12px;text-align:center;padding:0 4px;font-variant-numeric:tabular-nums}
+.tag.focus{border-color:var(--brand);color:var(--brand);background:transparent}
+.tag.focus.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.tag.kind{border-style:dashed;border-color:var(--c-long);color:var(--sub);background:transparent}
+.tag.kind.on{background:var(--c-long);border-style:solid;border-color:var(--c-long);color:#1a1a1a}
+.tsep{flex:none;width:2px;align-self:stretch;margin:3px 3px;border-radius:1px;background:var(--muted)}
+.tagpill.focus{border-color:var(--brand);color:var(--brand)}
+.tagpill.kind{border-color:var(--c-long);background:var(--c-long);color:#1a1a1a}
+.lrow{display:flex;align-items:center;gap:6px;padding:5px 0;border-top:1px solid var(--line)}
+.lrow:first-child{border-top:none}
+.lrow span{flex:1;font-weight:600;font-size:14px}
+.lrow .ops{display:flex;gap:4px}
+.lrow .ops button{border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:8px;width:30px;height:30px;font-size:14px}
+.lrow .ops button:disabled{opacity:.3}
+#tolLR:placeholder-shown{border:1px dashed var(--c-right)}
 .tagpill{display:inline-block;font-size:11px;border:1px solid var(--line);border-radius:999px;padding:0 7px;margin:2px 3px 0 0;color:var(--sub)}
-.tbar{display:grid;grid-template-columns:76px 1fr 70px;gap:8px;align-items:center;font-size:13px;padding:4px 0}
+.tbar{display:grid;grid-template-columns:72px 1fr 96px;gap:8px;align-items:center;font-size:13px;padding:4px 0}
 .tbar .tr{height:10px;background:var(--bg);border-radius:4px;overflow:hidden}
 .tbar .tr i{display:block;height:100%;background:var(--sub);border-radius:4px}
 .tbar .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--sub);font-size:12px}
@@ -240,6 +255,7 @@ nav button svg{width:22px;height:22px}
     <div class="rangerow" id="rangeRow" style="display:none">
       <input type="date" id="rFrom" aria-label="開始日"><span>〜</span><input type="date" id="rTo" aria-label="終了日">
     </div>
+    <div class="seg mt" id="kindSeg"><button data-k="all" class="on">全セット</button><button data-k="normal">通常のみ</button></div>
     <div class="hint" id="periodInfo"></div>
   </div>
   <div class="card">
@@ -274,10 +290,16 @@ nav button svg{width:22px;height:22px}
     <div class="hint">ここで設定した許容範囲が記録時の初期値になります（記録ごとに変更も可）。</div>
   </div>
   <div class="card">
-    <h2>タグ <span class="aside">タップで削除</span></h2>
-    <div class="tagwrap" id="tagEdit"></div>
-    <button class="btn sub mt" id="addTagBtn">＋ タグを追加</button>
-    <div class="hint">記録画面でミスの傾向を選べます。削除しても過去の記録のタグは残ります。</div>
+    <h2>ミスのタグ <span class="aside">記録画面でタップ＝＋1球</span></h2>
+    <div id="tagEdit"></div>
+    <div class="row mt"><button class="btn sub" id="addTagBtn">＋ 追加</button><button class="btn sub" id="resetTagBtn">標準タグに戻す</button></div>
+    <div class="hint">標準：出だし左・出だし右・左曲がり・右曲がり／テンプラ・シャンク・トップ・ダフり・トウ・芯。削除しても過去の記録のタグは残ります。</div>
+  </div>
+  <div class="card">
+    <h2>意識タグ <span class="aside">付ける／付けない</span></h2>
+    <div id="focusEdit"></div>
+    <button class="btn sub mt" id="addFocusBtn">＋ 追加</button>
+    <div class="hint">練習で意識したことを記録します。保存後も次のセットに引き継がれます。</div>
   </div>
   <div class="card">
     <h2>打数のまとめ登録 <span class="aside">最大4つ・空欄は非表示</span></h2>
@@ -322,7 +344,8 @@ nav button svg{width:22px;height:22px}
     <div><label class="f">奥</label><input type="number" inputmode="numeric" min="0" id="eLong"></div>
   </div>
   <div class="tolrow">許容 距離<input id="eDist" style="width:96px">y　左右±<input type="number" id="eTolLR" inputmode="numeric">y</div>
-  <label class="f mt">タグ</label><div class="tagwrap" id="eTags"></div>
+  <label class="f mt">タグ <span style="color:var(--muted)">タップで＋1／長押しで0</span></label><div class="tagwrap" id="eTags"></div>
+  <label class="f mt">種類・意識したこと</label><div class="tagwrap" id="eFocus"></div>
   <label class="f mt">メモ</label><textarea id="eMemo"></textarea>
   <div class="warn" id="eWarn"></div>
   <button class="btn mt" id="eSave">保存</button>
@@ -357,12 +380,19 @@ const pct=(a,b)=>b?Math.round(a/b*1000)/10:0;
 const fmtDate=s=>{const d=new Date(s+'T00:00');return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}（${'日月火水木金土'[d.getDay()]}）`};
 const shortDate=s=>{const [,m,d]=s.split('-');return `${+m}/${+d}`};
 
+const NEW_TAGS=['出だし左','出だし右','左曲がり','右曲がり','テンプラ','シャンク','トップ','ダフり','トウ','芯'];
+const OLD_TAGS=['スライス','フック','チーピン','プッシュ','引っかけ','トップ','ダフり','テンプラ','シャンク'];
+const DEFAULT_FOCUS=['掌屈','左腰を引く','右足を引く','肩を入れる','扇の手首','ヘッドカバー'];
+const KINDS=['ウォームアップ','ドリル'];
 /* ---------- storage ---------- */
 let db;
 function load(){
   try{db=JSON.parse(localStorage.getItem(KEY))}catch(e){db=null}
-  if(!db||!Array.isArray(db.clubs)){db={version:2,clubs:newClubs(),records:[]};save();return}
-  if(db.version!==2){ // 旧版からの移行
+  if(!db||!Array.isArray(db.clubs)){db={version:3,clubs:newClubs(),records:[],tags:NEW_TAGS.slice(),focusTags:DEFAULT_FOCUS.slice(),tagMigAsked:true};save();return}
+  migrate();save();
+}
+function migrate(){
+  if(!db.version||db.version<2){ // 旧版からの移行
     if(!db.records.length)db.clubs=newClubs();
     else{
       const used=new Set(db.records.map(r=>r.clubId));
@@ -371,8 +401,14 @@ function load(){
       old.filter(o=>!db.clubs.some(c=>c.id===o.id)).forEach(o=>db.clubs.push({id:o.id,name:o.name,dist:'',tolLR:''}));
     }
     db.records.forEach(r=>{if(r.dist===undefined)r.dist=r.tolFB?`±${r.tolFB}`:'';delete r.tolFB});
-    db.version=2;save();
+    db.version=2;
   }
+  if(db.version<3){ // v2→v3：タグの回数・意識タグ・種類
+    if(!Array.isArray(db.tags))db.tags=OLD_TAGS.slice();
+    if(!Array.isArray(db.focusTags))db.focusTags=DEFAULT_FOCUS.slice();
+    db.version=3;
+  }
+  if(!Array.isArray(db.records))db.records=[];
 }
 function save(){localStorage.setItem(KEY,JSON.stringify(db))}
 const clubById=id=>db.clubs.find(c=>c.id===id);
@@ -380,10 +416,10 @@ const clubName=r=>clubById(r.clubId)?.name||r.clubName||'?';
 const tolText=o=>[o.dist?`${o.dist}y`:'',o.tolLR!==''&&o.tolLR!=null?`左右±${o.tolLR}y`:''].filter(Boolean).join('・');
 const inOf=r=>Math.max(0,r.total-r.left-r.right-r.short-r.long);
 
-function ask(msg,{input=false,ok='OK',danger=false,cancel=true,value=''}={}){
+function ask(msg,{input=false,ok='OK',danger=false,cancel=true,value='',no='キャンセル'}={}){
   return new Promise(res=>{
     $('dlgMsg').textContent=msg;const inp=$('dlgInput');inp.style.display=input?'':'none';inp.value=value;
-    $('dlgYes').textContent=ok;$('dlgYes').className='btn'+(danger?' btn-del':'');$('dlgNo').style.display=cancel?'':'none';
+    $('dlgYes').textContent=ok;$('dlgYes').className='btn'+(danger?' btn-del':'');$('dlgNo').style.display=cancel?'':'none';$('dlgNo').textContent=no;
     const m=$('dlg');m.classList.add('show');if(input)setTimeout(()=>inp.focus(),50);
     const done=v=>{m.classList.remove('show');$('dlgYes').onclick=$('dlgNo').onclick=inp.onkeydown=null;res(v)};
     $('dlgYes').onclick=()=>done(input?inp.value:true);$('dlgNo').onclick=()=>done(input?null:false);
@@ -404,7 +440,7 @@ $('tabs').addEventListener('click',e=>{
 /* ---------- record ---------- */
 let st={clubId:null};
 const NUMS=['nTotal','nLeft','nRight','nShort','nLong'];
-function saveDraft(){localStorage.setItem(DRAFT,JSON.stringify({clubId:st.clubId,dist:$('dist').value,tolLR:$('tolLR').value,memo:$('recMemo').value,tags:selTags,num:NUMS.map(i=>$(i).value)}))}
+function saveDraft(){localStorage.setItem(DRAFT,JSON.stringify({clubId:st.clubId,dist:$('dist').value,tolLR:$('tolLR').value,memo:$('recMemo').value,tags:selTags,focus:selFocus,kind:selKind,num:NUMS.map(i=>$(i).value)}))}
 function loadDraft(){try{const d=JSON.parse(localStorage.getItem(DRAFT));if(d&&Array.isArray(d.num)){st.clubId=d.clubId;return d}}catch(e){}return null}
 function setTol(c){$('dist').value=c?.dist??'';$('tolLR').value=c?.tolLR??''}
 
@@ -425,7 +461,7 @@ document.getElementById('v-record').addEventListener('click',e=>{
 });
 const cap=s=>s[0].toUpperCase()+s.slice(1);
 $('resetBtn').onclick=async()=>{if(currentCounts().total&&!await ask('入力をクリアしますか？'))return;resetInput()};
-function resetInput(){NUMS.forEach(i=>$(i).value=0);$('recMemo').value='';selTags=[];if($('recTags'))renderRecTags();updateSummary();saveDraft()}
+function resetInput(){NUMS.forEach(i=>$(i).value=0);$('recMemo').value='';selTags={};if($('recTags'))renderRecTags();updateSummary();saveDraft()}
 NUMS.forEach(i=>{$(i).addEventListener('input',()=>{updateSummary();saveDraft()});$(i).addEventListener('focus',e=>e.target.select())});
 ['dist','tolLR','recMemo'].forEach(i=>$(i).addEventListener('input',saveDraft));
 const nv=id=>Math.max(0,parseInt($(id).value,10)||0);
@@ -441,7 +477,7 @@ function updateSummary(){
 $('saveBtn').onclick=()=>{
   const t=currentCounts(),c=clubById(st.clubId);if(!c||!t.total)return;
   db.records.push({id:uid(),date:$('recDate').value||todayStr(),clubId:c.id,clubName:c.name,...t,
-    dist:$('dist').value.trim(),tolLR:$('tolLR').value===''?'':Number($('tolLR').value),memo:$('recMemo').value.trim(),tags:selTags.slice(),createdAt:Date.now()});
+    dist:$('dist').value.trim(),tolLR:$('tolLR').value===''?'':Number($('tolLR').value),memo:$('recMemo').value.trim(),tags:cleanTags(selTags,t.total),focus:selFocus.slice(),kind:selKind||'通常',createdAt:Date.now()});
   save();resetInput();renderDay();toast(`${c.name}：${t.total}球を保存しました`);
 };
 $('recDate').addEventListener('change',renderDay);
@@ -451,7 +487,7 @@ function recRow(r){
   return `<div class="rec" data-id="${r.id}">
     <div class="club">${esc(clubName(r))}</div>
     <div class="meta">${r.total}球${tolText(r)?`（${esc(tolText(r))}）`:''}<br>${DIRS.map(d=>`<i class="dot" style="background:var(${d.c})"></i>${d.n}${r[d.k]}`).join('')}
-      ${recTags(r).length?`<br>${recTags(r).map(t=>`<span class="tagpill">${esc(t)}</span>`).join('')}`:''}
+      ${(recTags(r).length||recFocus(r).length||recKind(r)!=='通常')?`<br>${recKind(r)!=='通常'?`<span class="tagpill kind">${recKind(r)}</span>`:''}${Object.entries(tagObj(r)).map(([t,c])=>`<span class="tagpill">${esc(t)}${c!=null?' '+c:''}</span>`).join('')}${recFocus(r).map(t=>`<span class="tagpill focus">${esc(t)}</span>`).join('')}`:''}
       ${r.memo?`<br><span style="color:var(--muted)">${esc(r.memo)}</span>`:''}</div>
     <div class="rate">${pct(inn,r.total)}%</div></div>`;
 }
@@ -462,17 +498,56 @@ function renderDay(){
   $('dayTotal').textContent=list.length?`計${tot}球・範囲内${pct(inn,tot)}%`:'';
 }
 const DEFAULT_QUICK=[10,20,30,50];
-const DEFAULT_TAGS=['スライス','フック','チーピン','プッシュ','引っかけ','トップ','ダフり','テンプラ','シャンク'];
-const tagList=()=>Array.isArray(db.tags)?db.tags:DEFAULT_TAGS;
-const recTags=r=>Array.isArray(r.tags)?r.tags:[];
-let selTags=[];
-function tagButtons(sel,extra=[]){
+const tagList=()=>Array.isArray(db.tags)?db.tags:NEW_TAGS;
+const focusList=()=>Array.isArray(db.focusTags)?db.focusTags:DEFAULT_FOCUS;
+// タグ：新形式は {名前:球数}、旧形式（配列）は球数不明＝null
+const tagObj=r=>{const t=r&&r.tags;if(Array.isArray(t)){const o={};t.forEach(n=>o[n]=null);return o}return t&&typeof t==='object'?t:{}};
+const recTags=r=>Object.keys(tagObj(r));
+const recFocus=r=>Array.isArray(r.focus)?r.focus:[];
+const recKind=r=>KINDS.includes(r.kind)?r.kind:'通常';
+const tagsText=r=>Object.entries(tagObj(r)).map(([n,c])=>c==null?n:`${n}:${c}`).join('／');
+const cleanTags=(m,max)=>{const o={};Object.entries(m).forEach(([n,c])=>{if(c==null)o[n]=null;else if(c>0)o[n]=Math.min(c,max||c)});return o};
+let selTags={},selFocus=[],selKind='';
+function tagButtons(map,extra=[]){
   const names=[...tagList(),...extra.filter(t=>!tagList().includes(t))];
-  return names.map(t=>`<button type="button" class="tag ${sel.includes(t)?'on':''}" data-tag="${esc(t)}">${esc(t)}</button>`).join('');
+  return names.map(t=>{const has=t in map,c=map[t];
+    return `<button type="button" class="tag ${has?'on':''}" data-tag="${esc(t)}">${esc(t)}${has&&c!=null?`<b class="cnt">${c}</b>`:''}</button>`}).join('');
 }
-function renderRecTags(){selTags=selTags.filter(t=>tagList().includes(t));$('recTags').innerHTML=tagButtons(selTags);$('recTags').style.display=tagList().length?'':'none'}
-$('recTags').addEventListener('click',e=>{const b=e.target.closest('.tag');if(!b)return;const t=b.dataset.tag;
-  selTags=selTags.includes(t)?selTags.filter(x=>x!==t):[...selTags,t];b.classList.toggle('on');saveDraft()});
+function focusButtons(focus,kind,extra=[]){
+  const names=[...focusList(),...extra.filter(t=>!focusList().includes(t))];
+  return KINDS.map(k=>`<button type="button" class="tag kind ${kind===k?'on':''}" data-kind="${k}">${k}</button>`).join('')
+    +names.map(t=>`<button type="button" class="tag focus ${focus.includes(t)?'on':''}" data-focus="${esc(t)}">${esc(t)}</button>`).join('');
+}
+function renderRecTags(){
+  const el=$('recTags'),sl=el.scrollLeft;
+  el.innerHTML=tagButtons(selTags)+'<span class="tsep"></span>'+focusButtons(selFocus,selKind);
+  el.scrollLeft=sl;
+}
+// 回数タグ：タップで＋1（上限＝全打数）、長押しで0
+function bindCountTags(el,getMap,getMax,onChange){
+  let timer=null,fired=false,sx=0,sy=0;
+  const cancel=()=>clearTimeout(timer);
+  el.addEventListener('pointerdown',e=>{const b=e.target.closest('.tag[data-tag]');if(!b)return;fired=false;sx=e.clientX;sy=e.clientY;cancel();
+    timer=setTimeout(()=>{fired=true;const m=getMap(),n=b.dataset.tag;if(n in m){delete m[n];onChange();if(navigator.vibrate)navigator.vibrate(30);toast(`${n}を0にしました`)}},550)});
+  el.addEventListener('pointermove',e=>{if(Math.abs(e.clientX-sx)>8||Math.abs(e.clientY-sy)>8)cancel()});
+  ['pointerup','pointercancel','pointerleave'].forEach(t=>el.addEventListener(t,cancel));
+  el.addEventListener('contextmenu',e=>{if(e.target.closest('.tag'))e.preventDefault()});
+  el.addEventListener('click',e=>{const b=e.target.closest('.tag[data-tag]');if(!b)return;if(fired){fired=false;return}
+    const m=getMap(),n=b.dataset.tag,max=getMax(),cur=m[n]??0;
+    if(!max){toast('先に全打数を入力してください');return}
+    if(cur>=max){toast(`全打数（${max}球）を超えられません`);return}
+    m[n]=cur+1;onChange();
+  });
+}
+// 種類（排他）・意識タグ（付ける／付けない）
+function bindFocus(el,get,set,onChange){
+  el.addEventListener('click',e=>{const b=e.target.closest('.tag[data-kind],.tag[data-focus]');if(!b)return;const v=get();
+    if(b.dataset.kind)v.kind=v.kind===b.dataset.kind?'':b.dataset.kind;
+    else{const f=b.dataset.focus;v.focus=v.focus.includes(f)?v.focus.filter(x=>x!==f):[...v.focus,f]}
+    set(v);onChange()});
+}
+bindCountTags($('recTags'),()=>selTags,()=>nv('nTotal'),()=>{renderRecTags();saveDraft()});
+bindFocus($('recTags'),()=>({focus:selFocus,kind:selKind}),v=>{selFocus=v.focus;selKind=v.kind},()=>{renderRecTags();saveDraft()});
 const quickList=()=>(Array.isArray(db.quick)?db.quick:DEFAULT_QUICK).slice(0,4);
 function renderQuick(){
   const q=quickList().filter(v=>v>0);
@@ -489,11 +564,14 @@ function openEdit(id){
   $('eClub').innerHTML=db.clubs.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')+(clubById(r.clubId)?'':`<option value="${r.clubId}">${esc(r.clubName)}（削除済）</option>`);
   $('eClub').value=r.clubId;
   ['Total','Left','Right','Short','Long'].forEach(k=>$('e'+k).value=r[k.toLowerCase()]);
-  $('eTolLR').value=r.tolLR??'';$('eDist').value=r.dist||'';$('eMemo').value=r.memo||'';$('eWarn').textContent='';$('eTags').innerHTML=tagButtons(recTags(r),recTags(r));
+  $('eTolLR').value=r.tolLR??'';$('eDist').value=r.dist||'';$('eMemo').value=r.memo||'';$('eWarn').textContent='';eMap={...tagObj(r)};eFoc={focus:recFocus(r).slice(),kind:recKind(r)==='通常'?'':recKind(r)};eExtra=recTags(r);eFocExtra=recFocus(r);renderEditTags();
   $('editModal').classList.add('show');
 }
 document.addEventListener('click',e=>{const r=e.target.closest('.rec[data-id]');if(r)openEdit(r.dataset.id)});
-$('eTags').addEventListener('click',e=>{const b=e.target.closest('.tag');if(b)b.classList.toggle('on')});
+let eMap={},eFoc={focus:[],kind:''},eExtra=[],eFocExtra=[];
+function renderEditTags(){$('eTags').innerHTML=tagButtons(eMap,eExtra);$('eFocus').innerHTML=focusButtons(eFoc.focus,eFoc.kind,eFocExtra)}
+bindCountTags($('eTags'),()=>eMap,()=>nv('eTotal'),renderEditTags);
+bindFocus($('eFocus'),()=>eFoc,v=>eFoc=v,renderEditTags);
 $('eCancel').onclick=()=>$('editModal').classList.remove('show');
 $('editModal').addEventListener('click',e=>{if(e.target.id==='editModal')$('editModal').classList.remove('show')});
 $('eSave').onclick=()=>{
@@ -502,7 +580,7 @@ $('eSave').onclick=()=>{
   if(!v.total){$('eWarn').textContent='打数を入力してください';return}
   const c=clubById($('eClub').value);
   Object.assign(editing,v,{date:$('eDate').value||editing.date,clubId:$('eClub').value,clubName:c?c.name:editing.clubName,
-    dist:$('eDist').value.trim(),tolLR:$('eTolLR').value===''?'':Number($('eTolLR').value),memo:$('eMemo').value.trim(),tags:[...document.querySelectorAll('#eTags .tag.on')].map(b=>b.dataset.tag)});
+    dist:$('eDist').value.trim(),tolLR:$('eTolLR').value===''?'':Number($('eTolLR').value),memo:$('eMemo').value.trim(),tags:Array.isArray(editing.tags)&&Object.values(eMap).every(c=>c==null)&&Object.keys(eMap).length===editing.tags.length?editing.tags:cleanTags(eMap,v.total),focus:eFoc.focus.slice(),kind:eFoc.kind||'通常'});
   save();$('editModal').classList.remove('show');refreshActive();toast('更新しました');
 };
 $('eDelete').onclick=async()=>{if(!await ask(`${fmtDate(editing.date)} ${clubName(editing)}（${editing.total}球）の記録を削除しますか？`,{ok:'削除',danger:true}))return;db.records=db.records.filter(r=>r!==editing);save();$('editModal').classList.remove('show');refreshActive();toast('削除しました')};
@@ -514,9 +592,14 @@ function renderHistory(){
   const sel=$('histClub'),cur=sel.value;
   sel.innerHTML='<option value="">すべてのクラブ</option>'+db.clubs.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
   sel.value=cur&&clubById(cur)?cur:'';
-  const ts=$('histTag'),tcur=ts.value,used=[...new Set([...tagList(),...db.records.flatMap(recTags)])];
-  ts.innerHTML='<option value="">すべて</option>'+used.map(t=>`<option>${esc(t)}</option>`).join('');ts.value=used.includes(tcur)?tcur:'';
-  const recs=db.records.filter(r=>(!sel.value||r.clubId===sel.value)&&(!ts.value||recTags(r).includes(ts.value))).sort((a,b)=>b.date.localeCompare(a.date)||a.createdAt-b.createdAt);
+  const ts=$('histTag'),tcur=ts.value,used=[...new Set([...tagList(),...db.records.flatMap(recTags)])],usedF=[...new Set([...focusList(),...db.records.flatMap(recFocus)])];
+  const opts=[['t:',used],['f:',usedF],['k:',KINDS]];
+  ts.innerHTML='<option value="">すべて</option>'+`<optgroup label="ミスのタグ">${used.map(t=>`<option value="t:${esc(t)}">${esc(t)}</option>`).join('')}</optgroup>`
+    +`<optgroup label="意識タグ">${usedF.map(t=>`<option value="f:${esc(t)}">${esc(t)}</option>`).join('')}</optgroup>`
+    +`<optgroup label="種類">${KINDS.map(t=>`<option value="k:${t}">${t}</option>`).join('')}</optgroup>`;
+  ts.value=opts.some(([p,l])=>l.some(x=>p+x===tcur))?tcur:'';
+  const tv=ts.value,tf=r=>!tv||(tv.startsWith('t:')?recTags(r).includes(tv.slice(2)):tv.startsWith('f:')?recFocus(r).includes(tv.slice(2)):recKind(r)===tv.slice(2));
+  const recs=db.records.filter(r=>(!sel.value||r.clubId===sel.value)&&tf(r)).sort((a,b)=>b.date.localeCompare(a.date)||a.createdAt-b.createdAt);
   if(!recs.length){$('histList').innerHTML='<div class="card"><div class="empty">記録がありません</div></div>';return}
   const groups={};recs.forEach(r=>(groups[r.date]=groups[r.date]||[]).push(r));
   $('histList').innerHTML=Object.keys(groups).sort().reverse().map(d=>{
@@ -526,7 +609,8 @@ function renderHistory(){
 }
 
 /* ---------- analysis ---------- */
-let period='90',detailClub=null;
+let period='90',detailClub=null,kindFilter='all';
+$('kindSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;kindFilter=b.dataset.k;document.querySelectorAll('#kindSeg button').forEach(x=>x.classList.toggle('on',x===b));renderAnalysis()});
 $('periodSeg').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;period=b.dataset.p;
   document.querySelectorAll('#periodSeg button').forEach(x=>x.classList.toggle('on',x===b));renderAnalysis()});
 $('rFrom').addEventListener('change',renderAnalysis);$('rTo').addEventListener('change',renderAnalysis);
@@ -536,7 +620,8 @@ function periodRange(){
   const d=new Date();d.setDate(d.getDate()-Number(period)+1);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
   return[d.toISOString().slice(0,10),todayStr()];
 }
-function periodRecs(){
+function periodRecs(){return periodRecsAll().filter(r=>kindFilter==='all'||recKind(r)==='通常')}
+function periodRecsAll(){
   if(period==='range'){const[f,t]=periodRange();return db.records.filter(r=>(!f||r.date>=f)&&(!t||r.date<=t))}
   if(period==='all')return db.records.slice();
   const d=new Date();d.setDate(d.getDate()-Number(period)+1);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
@@ -595,22 +680,37 @@ function renderAnalysis(){
   if(ranked.length>=2)html+=`<li>得意：<b>${esc(ranked[0].c.name)}</b>（${ranked[0].a.rate}%）／ 課題：<b>${esc(ranked.at(-1).c.name)}</b>（${ranked.at(-1).a.rate}%）</li>`;
   html+=`</ul></div><div class="hint">得意・課題は10球以上打ったクラブで比較しています。</div>`;
   const tl=recs.filter(r=>rows.some(x=>x.c.id===r.clubId));
-  html+=`<h2 class="mt2">タグの集計 <span class="aside">記録${tl.length}件中の回数</span></h2>${tagBars(tl,true)}`;
+  html+=`<h2 class="mt2">タグの集計 <span class="aside">全${all.total}球中の球数</span></h2>${tagBars(tl,true)}<h2 class="mt2">意識タグ別の成績</h2>${focusTable(tl)}`;
+  const ks=['通常',...KINDS].map(k=>[k,agg(tl.filter(r=>recKind(r)===k))]).filter(([,a])=>a.total);
+  if(ks.length>1)html+=`<h2 class="mt2">セットの種類別</h2><table class="ctable">${ks.map(([k,a])=>`<tr><td><b>${k}</b></td><td class="num">${a.total}球</td><td style="width:40%">${stackBar(a)}</td><td class="num"><b>${a.rate}%</b></td></tr>`).join('')}</table>`;
   $('overallCard').innerHTML=html;$('overallCard').style.display='';
 }
 $('clubTable').addEventListener('click',e=>{const tr=e.target.closest('tr[data-cid]');if(!tr)return;detailClub=tr.dataset.cid;$('dClub').value=detailClub;renderDetail(periodRecs());$('detailCard').scrollIntoView({behavior:'smooth',block:'start'})});
 $('dClub').addEventListener('change',()=>{detailClub=$('dClub').value;renderDetail(periodRecs())});
 
 function tagStats(list){
-  const m={};list.forEach(r=>recTags(r).forEach(t=>{(m[t]=m[t]||{n:0,clubs:{}}).n++;const cn=clubName(r);m[t].clubs[cn]=(m[t].clubs[cn]||0)+1}));
-  return Object.entries(m).sort((a,b)=>b[1].n-a[1].n);
+  const m={};list.forEach(r=>Object.entries(tagObj(r)).forEach(([t,c])=>{const o=m[t]=m[t]||{n:0,balls:0,legacy:0,clubs:{}};o.n++;
+    if(c==null)o.legacy++;else o.balls+=c;const cn=clubName(r);o.clubs[cn]=(o.clubs[cn]||0)+(c==null?0:c)}));
+  return Object.entries(m).sort((a,b)=>(b[1].balls-a[1].balls)||(b[1].n-a[1].n));
+}
+const tagVal=(o,T)=>[o.balls?`${o.balls}球・${pct(o.balls,T)}%`:'',o.legacy?`旧${o.legacy}件`:''].filter(Boolean).join('＋');
+function focusStats(list){
+  const names=[...new Set(list.flatMap(recFocus))];
+  return names.map(n=>{const l=list.filter(r=>recFocus(r).includes(n));return[n,agg(l)]}).sort((a,b)=>b[1].total-a[1].total);
+}
+function focusTable(list){
+  const fs=focusStats(list);if(!fs.length)return '<div class="hint">この期間は意識タグの記録がありません</div>';
+  const base=agg(list);
+  return `<table class="ctable"><tr><th>意識</th><th class="num">打数</th><th style="width:38%">内訳</th><th class="num">範囲内率</th></tr>
+    ${fs.map(([n,a])=>`<tr><td><b>${esc(n)}</b></td><td class="num">${a.total}</td><td>${stackBar(a)}</td><td class="num"><b>${a.rate}%</b><br><span style="font-size:11px;color:${a.rate>=base.rate?'var(--brand)':'var(--danger)'}">${a.rate>=base.rate?'+':''}${Math.round((a.rate-base.rate)*10)/10}pt</span></td></tr>`).join('')}</table>
+    <div class="hint">pt：この期間全体の範囲内率（${base.rate}%）との差</div>`;
 }
 function tagBars(list,showClubs){
   const st=tagStats(list);if(!st.length)return '<div class="hint">この期間はタグの記録がありません</div>';
-  const max=st[0][1].n;
+  const T=list.reduce((s,r)=>s+r.total,0),score=o=>o.balls||o.legacy,max=Math.max(...st.map(([,o])=>score(o)));
   return st.map(([t,o])=>{
-    const clubs=Object.entries(o.clubs).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,n])=>`${esc(c)}（${n}回）`).join('・');
-    return `<div class="tbar" data-tip="${esc(t)}：${o.n}回（記録${list.length}件中）"><b>${esc(t)}</b><div class="tr"><i style="width:${o.n/max*100}%"></i></div><span class="v">${o.n}回・${pct(o.n,list.length)}%</span>${showClubs?`<div class="sub2">多いクラブ：${clubs}</div>`:''}</div>`;
+    const clubs=Object.entries(o.clubs).filter(([,n])=>n>0).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([c,n])=>`${esc(c)}（${n}球）`).join('・');
+    return `<div class="tbar" data-tip="${esc(t)}：${tagVal(o,T)}（全${T}球中）"><b>${esc(t)}</b><div class="tr"><i style="width:${score(o)/max*100}%"></i></div><span class="v">${tagVal(o,T)}</span>${showClubs&&clubs?`<div class="sub2">多いクラブ：${clubs}</div>`:''}</div>`;
   }).join('');
 }
 function renderDetail(recs){
@@ -620,7 +720,7 @@ function renderDetail(recs){
   $('dTitle').textContent=`${a.days}日・${a.total}球`;
   $('dMap').innerHTML=missMap(a,list);
   $('dInsight').innerHTML=`<ul>${insights(a).map(s=>`<li>${s}</li>`).join('')}</ul>`;
-  $('dTags').innerHTML=`<h2 class="mt2">タグ <span class="aside">記録${list.length}件中の回数</span></h2>${tagBars(list,false)}`;
+  $('dTags').innerHTML=`<h2 class="mt2">タグ <span class="aside">全${a.total}球中の球数</span></h2>${tagBars(list,false)}<h2 class="mt2">意識タグ別の成績</h2>${focusTable(list)}`;
   $('dTrend').innerHTML=trendChart(list);
   $('legend2').innerHTML=list.length?`<span><i style="background:var(--text);height:3px;border-radius:2px"></i>範囲内率</span>`+legendHtml(false):'';
 }
@@ -690,13 +790,16 @@ function buildAiPrompt(){
     const di=dayInfo[r.date]=dayInfo[r.date]||{n:0,balls:0,first:r.createdAt};
     di.n++;const before=di.balls;di.balls+=r.total;
     const el=r.createdAt&&di.first?Math.round((r.createdAt-di.first)/60000):'';
-    return [r.date,hm(r.createdAt),di.n,`${before+1}〜${di.balls}`,el,clubName(r),r.dist||'',r.tolLR??'',r.total,inOf(r),r.left,r.right,r.short,r.long,pct(inOf(r),r.total),recTags(r).join('／'),r.memo||''];
+    return [r.date,hm(r.createdAt),di.n,`${before+1}〜${di.balls}`,el,clubName(r),r.dist||'',r.tolLR??'',r.total,inOf(r),r.left,r.right,r.short,r.long,pct(inOf(r),r.total),recKind(r),tagsText(r),recFocus(r).join('／'),r.memo||''];
   });
   const clubIds=[...new Set(recs.map(r=>r.clubId))];
   const clubOrder=db.clubs.map(c=>c.id);clubIds.sort((a,b)=>(clubOrder.indexOf(a)+999*(clubOrder.indexOf(a)<0))-(clubOrder.indexOf(b)+999*(clubOrder.indexOf(b)<0)));
-  const clubRows=clubIds.map(id=>{const l=recs.filter(r=>r.clubId===id),a=agg(l),tg=tagStats(l).map(([t,o])=>`${t}${o.n}`).join('／');
+  const clubRows=clubIds.map(id=>{const l=recs.filter(r=>r.clubId===id),a=agg(l),tg=tagStats(l).map(([t,o])=>`${t} ${tagVal(o,a.total)}`).join('／');
     return [clubName(l[0]),a.days,a.total,a.in,pct(a.in,a.total),pct(a.left,a.total),pct(a.right,a.total),pct(a.short,a.total),pct(a.long,a.total),tg]});
-  const tagAll=tagStats(recs).map(([t,o])=>`${t}：${o.n}件（${Object.entries(o.clubs).map(([c,n])=>c+' '+n).join('、')}）`).join('\n')||'（なし）';
+  const tagAll=tagStats(recs).map(([t,o])=>`- ${t}：${tagVal(o,all.total)}（付けた記録${o.n}件${Object.values(o.clubs).some(n=>n>0)?`／番手別：${Object.entries(o.clubs).filter(([,n])=>n>0).map(([c,n])=>c+' '+n+'球').join('、')}`:''}）`).join('\n')||'（なし）';
+  const hasLegacy=recs.some(r=>Object.values(tagObj(r)).some(c=>c==null));
+  const focusRows=focusStats(recs).map(([n,a])=>[n,a.n,a.total,a.in,a.rate,pct(a.left,a.total),pct(a.right,a.total),pct(a.short,a.total),pct(a.long,a.total)]);
+  const kindRows=['通常',...KINDS].map(k=>{const a=agg(recs.filter(r=>recKind(r)===k));return[k,a.n,a.total,a.rate,pct(a.left,a.total),pct(a.right,a.total),pct(a.short,a.total),pct(a.long,a.total)]}).filter(r=>r[2]>0);
   const tolLines=db.clubs.map(c=>`${c.name}：距離 ${c.dist||'未設定'}y／左右 ${c.tolLR!==''&&c.tolLR!=null?'±'+c.tolLR+'y':'未設定'}`).join('\n');
   const tbl=(head,body)=>[head,...body].map(r=>r.map(csvCell).join(',')).join('\n');
   return `# ゴルフ練習データの分析依頼
@@ -707,7 +810,7 @@ function buildAiPrompt(){
 1. **ディープリサーチ（過去の傾向）**：ウェブ検索・リサーチ機能を使い、アマチュアゴルファーに多いミスの傾向や、今回のようなミスの出方（左右・距離の偏り、番手による違い、タグに出ているミス）と一般的に結びつく原因を調べてください。そのうえで、私のデータの期間内の推移（日ごと・番手ごと）と照らし合わせてください。
 2. **ディープリサーチ（最新のゴルフ理論）**：ボールフライトの法則（Dプレーン、フェース向きとクラブパス、入射角、打点）、地面反力・体の回旋などの近年の理論や、弾道計測器（TrackMan等）のデータに基づく知見を調べ、私のミス傾向の原因の説明に使ってください。**参考にした情報は出典（サイト名・URL）を明記**してください。
 3. **時系列・疲労の分析**：各記録には「記入時刻」「当日何回目の記録か」「当日の通算球数」「当日最初の記録からの経過分数」を付けています。**打つほど（球数・時間が進むほど）出てくるミスや精度の変化**、逆に打ち始めの精度、慣れによる改善がないかを分析してください。
-4. **タグ・メモの分析**：タグ（スライス、トップ等の自分で付けたミス）とメモ（意識したこと・気づき）を、方向・距離のミスと突き合わせて、何を意識した時に良く/悪くなっているかを読み取ってください。
+4. **タグ・意識・メモの分析**：ミスのタグ（球筋・当たり）の球数と割合を、方向・距離のミスと突き合わせて原因を読み取ってください。また**意識タグ（練習で意識したこと）ごとの成績**を比べ、何を意識した時に良く／悪くなっているかを示してください。メモは気づきの補足として使ってください。
 5. **課題の特定**：想定されるスイング課題を優先度の高い順に最大3つ挙げ、それぞれ「データ上の根拠」「考えられる原因」「確からしさ（高・中・低）」を示してください。
 6. **改善策**：課題ごとに練習場でできるドリル（やり方・球数の目安・チェックポイント）と、**次回の練習メニュー例**（番手と球数の配分、記録で確認すべき指標）を提案してください。
 
@@ -723,6 +826,12 @@ function buildAiPrompt(){
 - 距離の許容範囲（y）は、その番手で狙う飛距離の範囲。左右の許容範囲は ±y（未設定の場合あり）
 - 利き手の記載はありません（右打ちと想定して、左打ちの場合の読み替えも一言添えてください）
 - 練習場での記録です（マットからのショット）
+- **ミスのタグ**は、その記録の中で該当した球数（例：「出だし左:4」＝4球）。範囲内の球にも付くことがある。**気づいた球だけ付けているため、タグのない球が問題なしとは限らない**
+  - 球筋のタグ：「出だし左／出だし右」＝打ち出し方向（主にインパクト時のフェースの向き）、「左曲がり／右曲がり」＝曲がり（フェースの向きとクラブパスの差）。引っかけスライスなどは両方を付けている
+  - 当たりのタグ：テンプラ・シャンク・トップ・ダフり・トウ・芯（打点・入射角の情報）
+- **意識タグ**は、そのセットで意識したこと（付ける／付けないのみ）。次のセットに引き継いで使っている
+- **種類**：「ウォームアップ」「ドリル」のセットは通常の練習と分けて評価してください（ドリル中は精度が落ちるのが普通）${hasLegacy?`
+- 古い記録には旧形式のタグがあり、**球数が不明**（数字なし＝その記録で1球以上あった、という意味）。旧タグの読み替え：引っかけ＝出だし左、プッシュ＝出だし右、フック＝左曲がり、チーピン＝左曲がり（強い）、スライス＝右曲がり`:''}
 
 ## 対象期間
 ${fmtDate(from)}〜${fmtDate(to)}（練習日数 ${days}日、記録${recs.length}件、計${all.total}球、範囲内率 ${all.rate}%）
@@ -732,15 +841,23 @@ ${tolLines}
 
 ## 番手別の集計（％は全打数に対する割合）
 \`\`\`csv
-${tbl(['番手','練習日数','打数','範囲内','範囲内率%','左%','右%','ショート%','奥%','タグ(件数)'],clubRows)}
+${tbl(['番手','練習日数','打数','範囲内','範囲内率%','左%','右%','ショート%','奥%','ミスのタグ(球数・打数に対する割合)'],clubRows)}
 \`\`\`
 
-## タグの集計（記録件数・番手別）
+## ミスのタグの集計（球数と、期間の全打数に対する割合）
 ${tagAll}
+
+## 意識タグ別の成績
+${focusRows.length?'```csv\n'+tbl(['意識タグ','記録数','打数','範囲内','範囲内率%','左%','右%','ショート%','奥%'],focusRows)+'\n```':'（なし）'}
+
+## セットの種類別の成績
+\`\`\`csv
+${tbl(['種類','記録数','打数','範囲内率%','左%','右%','ショート%','奥%'],kindRows)}
+\`\`\`
 
 ## 記録の明細（古い順）
 \`\`\`csv
-${tbl(['日付','記入時刻','当日の記録順','当日の通算球数','当日開始からの経過分','番手','許容距離y','許容左右±y','打数','範囲内','左','右','ショート','奥','範囲内率%','タグ','メモ'],rows)}
+${tbl(['日付','記入時刻','当日の記録順','当日の通算球数','当日開始からの経過分','番手','許容距離y','許容左右±y','打数','範囲内','左','右','ショート','奥','範囲内率%','種類','ミスのタグ(球数)','意識タグ','メモ'],rows)}
 \`\`\`
 `;
 }
@@ -777,13 +894,24 @@ $('quickEdit').addEventListener('change',()=>{
   db.quick=[...document.querySelectorAll('#quickEdit input')].map(el=>{const v=Math.floor(Number(el.value));return v>0?Math.min(v,999):0});
   save();renderQuickEdit();renderQuick();toast('保存しました');
 });
-function renderTagEdit(){$('tagEdit').innerHTML=tagList().map(t=>`<button class="tag del" data-tag="${esc(t)}">${esc(t)}</button>`).join('')||'<span class="hint">タグがありません</span>'}
-$('tagEdit').addEventListener('click',async e=>{const b=e.target.closest('.tag');if(!b)return;const t=b.dataset.tag;
-  if(!await ask(`タグ「${t}」を削除しますか？（過去の記録のタグは残ります）`,{ok:'削除',danger:true}))return;
-  db.tags=tagList().filter(x=>x!==t);save();renderTagEdit();renderRecTags()});
-$('addTagBtn').onclick=async()=>{const t=(await ask('追加するタグ名（例：右プッシュ、ミスヒット）',{input:true,ok:'追加'})||'').trim().slice(0,10);if(!t)return;
-  if(tagList().includes(t)){toast('同じタグがあります');return}db.tags=[...tagList(),t];save();renderTagEdit();renderRecTags();toast('追加しました')};
-function renderSettings(){renderQuickEdit();renderTagEdit();
+function listEditor(elId,getL,setL,label){
+  const el=$(elId);
+  const render=()=>{const l=getL();el.innerHTML=l.map((t,i)=>`<div class="lrow" data-i="${i}"><span>${esc(t)}</span><div class="ops"><button data-op="up" ${i===0?'disabled':''}>↑</button><button data-op="down" ${i===l.length-1?'disabled':''}>↓</button><button data-op="del">✕</button></div></div>`).join('')||'<div class="hint">ありません</div>'};
+  el.addEventListener('click',async e=>{const b=e.target.closest('button[data-op]');if(!b)return;const l=getL().slice(),i=+b.closest('.lrow').dataset.i;
+    if(b.dataset.op==='del'){if(!await ask(`${label}「${l[i]}」を削除しますか？（過去の記録には残ります）`,{ok:'削除',danger:true}))return;l.splice(i,1)}
+    else{const j=b.dataset.op==='up'?i-1:i+1;[l[i],l[j]]=[l[j],l[i]]}
+    setL(l);save();render();renderRecTags()});
+  return render;
+}
+const renderTagEdit=listEditor('tagEdit',tagList,l=>db.tags=l,'タグ');
+const renderFocusEdit=listEditor('focusEdit',focusList,l=>db.focusTags=l,'意識タグ');
+async function addTo(getL,setL,msg,render){const t=(await ask(msg,{input:true,ok:'追加'})||'').trim().slice(0,10);if(!t)return;
+  if(getL().includes(t)||KINDS.includes(t)){toast('同じ名前があります');return}setL([...getL(),t]);save();render();renderRecTags();toast('追加しました')}
+$('addTagBtn').onclick=()=>addTo(tagList,l=>db.tags=l,'追加するミスのタグ（例：ヒール、低い）',renderTagEdit);
+$('addFocusBtn').onclick=()=>addTo(focusList,l=>db.focusTags=l,'追加する意識タグ（例：ハンドファースト）',renderFocusEdit);
+$('resetTagBtn').onclick=async()=>{if(!await ask('ミスのタグを標準（出だし左・出だし右・左曲がり・右曲がり／テンプラ・シャンク・トップ・ダフり・トウ・芯）に戻しますか？\n過去の記録のタグはそのまま残ります。',{ok:'標準に戻す'}))return;
+  db.tags=NEW_TAGS.slice();db.tagMigAsked=true;save();renderTagEdit();renderRecTags();toast('標準タグに戻しました')};
+function renderSettings(){renderQuickEdit();renderTagEdit();renderFocusEdit();
   $('clubEdit').innerHTML=db.clubs.map((c,i)=>`<div class="clubedit" data-id="${c.id}">
     <input value="${esc(c.name)}" data-f="name" maxlength="10">
     <input value="${esc(c.dist||'')}" data-f="dist" placeholder="距離">
@@ -815,8 +943,8 @@ function download(name,text,type){
 $('exportBtn').onclick=()=>download(`golf-accuracy-${todayStr()}.json`,JSON.stringify(db,null,1),'application/json');
 $('csvBtn').onclick=()=>{
   const q=s=>`"${String(s??'').replace(/"/g,'""')}"`;
-  const rows=[['日付','記入時刻','クラブ','打数','範囲内','左','右','ショート','奥','範囲内率(%)','許容距離(y)','許容左右(±y)','タグ','メモ']];
-  db.records.slice().sort((a,b)=>a.date.localeCompare(b.date)||a.createdAt-b.createdAt).forEach(r=>rows.push([r.date,hm(r.createdAt),clubName(r),r.total,inOf(r),r.left,r.right,r.short,r.long,pct(inOf(r),r.total),r.dist,r.tolLR,recTags(r).join('／'),r.memo]));
+  const rows=[['日付','記入時刻','クラブ','打数','範囲内','左','右','ショート','奥','範囲内率(%)','許容距離(y)','許容左右(±y)','種類','ミスのタグ(球数)','意識タグ','メモ']];
+  db.records.slice().sort((a,b)=>a.date.localeCompare(b.date)||a.createdAt-b.createdAt).forEach(r=>rows.push([r.date,hm(r.createdAt),clubName(r),r.total,inOf(r),r.left,r.right,r.short,r.long,pct(inOf(r),r.total),r.dist,r.tolLR,recKind(r),tagsText(r),recFocus(r).join('／'),r.memo]));
   download(`golf-accuracy-${todayStr()}.csv`,'﻿'+rows.map(r=>r.map(q).join(',')).join('\r\n'),'text/csv');
 };
 $('importBtn').onclick=()=>$('importFile').click();
@@ -826,7 +954,7 @@ $('importFile').onchange=async e=>{
     const d=JSON.parse(await f.text());
     if(!Array.isArray(d.clubs)||!Array.isArray(d.records))throw new Error('形式が違います');
     if(!await ask(`クラブ${d.clubs.length}本・記録${d.records.length}件を読み込みます。現在のデータは置き換えられます。よろしいですか？`,{ok:'読み込む',danger:true}))return;
-    db=d;save();refreshActive();toast('読み込みました');
+    db=d;migrate();save();refreshActive();toast('読み込みました');
   }catch(err){ask('読み込めませんでした：'+err.message,{cancel:false})}
 };
 $('wipeBtn').onclick=async()=>{if(!await ask('すべての記録とクラブ設定を削除します。元に戻せません。よろしいですか？',{ok:'すべて削除',danger:true}))return;
@@ -837,9 +965,15 @@ load();
 $('recDate').value=todayStr();
 const d=loadDraft();
 if(!clubById(st.clubId))st.clubId=db.clubs[0]?.id||null;
-if(d){selTags=Array.isArray(d.tags)?d.tags:[];$('dist').value=d.dist??'';$('tolLR').value=d.tolLR??'';$('recMemo').value=d.memo||'';NUMS.forEach((i,j)=>$(i).value=d.num[j]||0)}
+if(d){selTags=Array.isArray(d.tags)?Object.fromEntries(d.tags.map(n=>[n,1])):(d.tags&&typeof d.tags==='object'?d.tags:{});selFocus=Array.isArray(d.focus)?d.focus:[];selKind=KINDS.includes(d.kind)?d.kind:'';$('dist').value=d.dist??'';$('tolLR').value=d.tolLR??'';$('recMemo').value=d.memo||'';NUMS.forEach((i,j)=>$(i).value=d.num[j]||0)}
 else setTol(clubById(st.clubId));
 renderRecord();
+if(!db.tagMigAsked&&JSON.stringify(tagList())!==JSON.stringify(NEW_TAGS)){
+  setTimeout(async()=>{
+    const ok=await ask('ミスのタグを新しい標準に切り替えますか？\n\n球筋：出だし左・出だし右・左曲がり・右曲がり\n当たり：テンプラ・シャンク・トップ・ダフり・トウ・芯\n\n過去の記録のタグはそのまま残ります。あとから設定の「標準タグに戻す」でも切り替えられます。',{ok:'切り替える',no:'今のまま'});
+    db.tagMigAsked=true;if(ok)db.tags=NEW_TAGS.slice();save();renderRecTags();if(ok)toast('新しいタグに切り替えました');
+  },300);
+}
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{if($('v-analysis').classList.contains('active'))renderAnalysis()});
 if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
 </script>

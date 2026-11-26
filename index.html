@@ -158,6 +158,13 @@ nav button.on{color:var(--brand)}
 .tbar .sub2{grid-column:1/-1;font-size:11px;color:var(--muted);margin:-3px 0 2px}
 .rangerow{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;margin-top:8px}
 .rangerow span{color:var(--sub)}
+.hrow{grid-column:1/-1;display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;width:100%}
+.hrow .step button{width:34px;height:35px}.hrow .step input{width:34px;height:35px;font-size:18px}
+.hrow .dl{justify-self:start;font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.hrow .dl i{width:10px;height:10px;border-radius:3px;display:inline-block}
+#recKind{justify-self:start;width:100%;max-width:124px;height:35px;padding:0 17px 0 6px;font-size:13px;font-weight:700;letter-spacing:-.3px;border-radius:10px;
+  -webkit-appearance:none;appearance:none;background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%238a8984'/%3E%3C/svg%3E") no-repeat right 5px center}
+#recKind.on{background-color:var(--c-long);border-color:var(--c-long);color:#1a1a1a}
 /* ===== iPhone SE3 最適化 ===== */
 html,body{width:100%;overflow-x:hidden;overscroll-behavior:none;touch-action:manipulation;-webkit-text-size-adjust:100%}
 body{position:relative}
@@ -217,15 +224,16 @@ nav button svg{width:22px;height:22px}
     <div class="chips" id="clubChips"></div>
     <div class="totalrow"><span class="lbl">全打数</span><div class="step"><button data-t="nTotal" data-d="-1">−</button><input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="nTotal" value="0"><button data-t="nTotal" data-d="1">＋</button></div><div class="quick" id="quickBtns"></div></div>
     <div class="cross">
-      <div class="lblcell">範囲外↓</div><div class="dirbox"><span class="dl"><i style="background:var(--c-long)"></i>奥</span><div class="step"><button data-t="nLong" data-d="-1">−</button><input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="nLong" value="0"><button data-t="nLong" data-d="1">＋</button></div></div><div></div>
+      <div class="hrow"><select id="recKind" aria-label="セットの種類"><option value="">通常</option><option>ウォームアップ</option><option>ドリル</option></select><div class="step"><button data-t="nLong" data-d="-1">−</button><input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="nLong" value="0"><button data-t="nLong" data-d="1">＋</button></div><span class="dl"><i style="background:var(--c-long)"></i>奥</span></div>
       <div class="dirbox"><span class="dl"><i style="background:var(--c-left)"></i>左</span><div class="step"><button data-t="nLeft" data-d="-1">−</button><input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="nLeft" value="0"><button data-t="nLeft" data-d="1">＋</button></div></div>
       <div class="center"><span>範囲内</span><b id="cIn">0</b><span><span id="cInRate">–</span>・外<span id="sOut">0</span></span></div>
       <div class="dirbox"><span class="dl"><i style="background:var(--c-right)"></i>右</span><div class="step"><button data-t="nRight" data-d="-1">−</button><input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="nRight" value="0"><button data-t="nRight" data-d="1">＋</button></div></div>
-      <div></div><div class="dirbox"><span class="dl"><i style="background:var(--c-short)"></i>ショート</span><div class="step"><button data-t="nShort" data-d="-1">−</button><input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="nShort" value="0"><button data-t="nShort" data-d="1">＋</button></div></div><div></div>
+      <div class="hrow"><span></span><div class="step"><button data-t="nShort" data-d="-1">−</button><input type="number" inputmode="numeric" pattern="[0-9]*" min="0" id="nShort" value="0"><button data-t="nShort" data-d="1">＋</button></div><span class="dl"><i style="background:var(--c-short)"></i>ショート</span></div>
     </div>
     <span id="sTotal" hidden></span><span id="sRate" hidden></span>
     <div class="warn" id="recWarn"></div>
     <div class="tagstrip" id="recTags"></div>
+    <div class="tagstrip" id="recFocus"></div>
     <input id="recMemo" class="memo" placeholder="メモ（自由記入・任意）">
     <div class="saverow"><button class="btn sub" id="resetBtn">クリア</button><button class="btn" id="saveBtn">保存</button></div>
   </div>
@@ -319,6 +327,10 @@ nav button svg{width:22px;height:22px}
     <div class="hint">データはこの端末のブラウザ内だけに保存されます。定期的にJSONで保存しておくと安心です。</div>
   </div>
   <div class="card">
+    <h2>バージョン情報</h2>
+    <div id="verInfo" class="tol"></div>
+  </div>
+  <div class="card">
     <button class="btn danger" id="wipeBtn">すべてのデータを削除</button>
   </div>
 </section>
@@ -367,6 +379,7 @@ nav button svg{width:22px;height:22px}
 
 <script>
 'use strict';
+const APP_VERSION='v9',APP_UPDATED='2026/11/26';
 const KEY='golfAccuracy.v1', DRAFT='golfAccuracy.draft';
 const DIRS=[{k:'left',n:'左',c:'--c-left'},{k:'right',n:'右',c:'--c-right'},{k:'short',n:'ショート',c:'--c-short'},{k:'long',n:'奥',c:'--c-long'}];
 const DEFAULT_CLUBS=[['58','90〜100'],['58ハーフ','70'],['54','100〜110'],['54ハーフ','90'],['AW','120〜130'],['PW','130〜140'],['9I','140〜150'],['8I','150〜160'],['7I','160〜170'],['6I','170〜180'],['5I','180〜190'],['UT20','180〜200'],['1W','']];
@@ -513,15 +526,17 @@ function tagButtons(map,extra=[]){
   return names.map(t=>{const has=t in map,c=map[t];
     return `<button type="button" class="tag ${has?'on':''}" data-tag="${esc(t)}">${esc(t)}${has&&c!=null?`<b class="cnt">${c}</b>`:''}</button>`}).join('');
 }
-function focusButtons(focus,kind,extra=[]){
+function focusButtons(focus,kind,extra=[],withKind=true){
   const names=[...focusList(),...extra.filter(t=>!focusList().includes(t))];
-  return KINDS.map(k=>`<button type="button" class="tag kind ${kind===k?'on':''}" data-kind="${k}">${k}</button>`).join('')
+  return (withKind?KINDS:[]).map(k=>`<button type="button" class="tag kind ${kind===k?'on':''}" data-kind="${k}">${k}</button>`).join('')
     +names.map(t=>`<button type="button" class="tag focus ${focus.includes(t)?'on':''}" data-focus="${esc(t)}">${esc(t)}</button>`).join('');
 }
 function renderRecTags(){
-  const el=$('recTags'),sl=el.scrollLeft;
-  el.innerHTML=tagButtons(selTags)+'<span class="tsep"></span>'+focusButtons(selFocus,selKind);
-  el.scrollLeft=sl;
+  const el=$('recTags'),fl=$('recFocus'),sl=el.scrollLeft,sf=fl.scrollLeft;
+  el.innerHTML=tagButtons(selTags);
+  fl.innerHTML=focusButtons(selFocus,selKind,[],false);
+  const ks=$('recKind');ks.value=selKind;ks.classList.toggle('on',!!selKind);
+  el.scrollLeft=sl;fl.scrollLeft=sf;
 }
 // 回数タグ：タップで＋1（上限＝全打数）、長押しで0
 function bindCountTags(el,getMap,getMax,onChange){
@@ -547,7 +562,8 @@ function bindFocus(el,get,set,onChange){
     set(v);onChange()});
 }
 bindCountTags($('recTags'),()=>selTags,()=>nv('nTotal'),()=>{renderRecTags();saveDraft()});
-bindFocus($('recTags'),()=>({focus:selFocus,kind:selKind}),v=>{selFocus=v.focus;selKind=v.kind},()=>{renderRecTags();saveDraft()});
+$('recKind').addEventListener('change',e=>{selKind=e.target.value;renderRecTags();saveDraft()});
+bindFocus($('recFocus'),()=>({focus:selFocus,kind:selKind}),v=>{selFocus=v.focus;selKind=v.kind},()=>{renderRecTags();saveDraft()});
 const quickList=()=>(Array.isArray(db.quick)?db.quick:DEFAULT_QUICK).slice(0,4);
 function renderQuick(){
   const q=quickList().filter(v=>v>0);
@@ -911,7 +927,7 @@ $('addTagBtn').onclick=()=>addTo(tagList,l=>db.tags=l,'追加するミスのタ�
 $('addFocusBtn').onclick=()=>addTo(focusList,l=>db.focusTags=l,'追加する意識タグ（例：ハンドファースト）',renderFocusEdit);
 $('resetTagBtn').onclick=async()=>{if(!await ask('ミスのタグを標準（出だし左・出だし右・左曲がり・右曲がり／テンプラ・シャンク・トップ・ダフり・トウ・芯）に戻しますか？\n過去の記録のタグはそのまま残ります。',{ok:'標準に戻す'}))return;
   db.tags=NEW_TAGS.slice();db.tagMigAsked=true;save();renderTagEdit();renderRecTags();toast('標準タグに戻しました')};
-function renderSettings(){renderQuickEdit();renderTagEdit();renderFocusEdit();
+function renderSettings(){$('verInfo').innerHTML=`アプリ：<b>${APP_VERSION}</b>（${APP_UPDATED} 更新）<br>データ形式：${db.version}　記録：${db.records.length}件`;renderQuickEdit();renderTagEdit();renderFocusEdit();
   $('clubEdit').innerHTML=db.clubs.map((c,i)=>`<div class="clubedit" data-id="${c.id}">
     <input value="${esc(c.name)}" data-f="name" maxlength="10">
     <input value="${esc(c.dist||'')}" data-f="dist" placeholder="距離">
